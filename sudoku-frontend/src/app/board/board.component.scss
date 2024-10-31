@@ -1,0 +1,70 @@
+@import '../../styles/variables.scss';
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: $primary-font-family;
+    .row {
+        display: flex;
+        .col {
+            border: 1px solid $primary-color;
+            padding: 5px;
+            width: 19px;
+            height: 19px;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+        }
+        .br-l {
+            border-left: 1px solid black;
+        }
+        .br-r {
+            border-right: 1px solid black;
+        }
+        .br-t {
+            border-top: 1px solid black;
+        }
+        .br-b {
+            border-bottom: 1px solid black;
+        }
+    }
+    .entries {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .entry {
+            padding: 5px;
+            width: 19px;
+            height: 19px;
+            text-align: center;
+            margin: 5px 0px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    }
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 0px;
+        button {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            background: none;
+            i {
+                font-size: 16px;
+                // font-weight: 600;
+                margin-bottom: 5px;
+                cursor: pointer;
+            }
+            .name {
+                font-size: 11px;
+            }
+        }
+    }
+}

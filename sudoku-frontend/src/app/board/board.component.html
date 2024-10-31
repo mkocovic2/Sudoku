@@ -1,0 +1,30 @@
+<div class="container">
+    <div class="board">
+        <div class="row" *ngFor="let box of boxes; let i = index">
+            <div class="col" onclick="clickCell(i, j)" *ngFor="let box of boxes; let j = index" [ngClass]="{'br-l': j == 0, 'br-r': j == 2 || j == 5 || j == 8, 'br-t': i == 0, 'br-b': i == 2 || i == 5 || i == 8}">
+                {{board[i][j] > 1 ? board[i][j] : ''}}
+            </div>
+        </div>
+        <div class="entries">
+            <div class="entry" *ngFor="let entry of boxes; let i = index">{{i+1}}</div>
+        </div>
+        <div class="actions">
+            <button>
+                <i class="fa-solid fa-rotate-left"></i>
+                <div class="name">Undo</div>
+            </button>
+            <button>
+                <i class="fa-solid fa-eraser"></i>
+                <div class="name">Erase</div>
+            </button>
+            <button>
+                <i class="fa-regular fa-lightbulb"></i>
+                <div class="name">Hint</div>
+            </button>
+            <button>
+                <i class="fa-regular fa-note-sticky"></i>
+                <div class="name">Note</div>
+            </button>
+        </div>
+    </div>
+</div>

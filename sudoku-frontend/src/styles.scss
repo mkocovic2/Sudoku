@@ -1,1 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
+@import './styles/variables.scss';
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
+
+.app-btn {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: $secondary-color;
+    margin-top: 15px;
+    padding: 7px 15px;
+    border-radius: 20px;
+    outline: 3px solid white;
+    transition: outline ease-in-out 0.3s;
+    cursor: pointer;
+
+    &:hover {
+        outline: 3px solid $primary-color;
+    }
+}
