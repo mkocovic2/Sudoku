@@ -11,7 +11,18 @@ export class BoardComponent {
   board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
   clickedBoxPosition: number[] = [-1, -1]
 
-  clickCell = (i:number, j:number) => {
+  selectCell(i:number, j:number) {
     this.clickedBoxPosition = [i, j]
+  }
+
+  setCell(value: number) {
+    const [x, y] = this.getPosition()
+    if (x > -1 && this.board[x][y] == 0) {
+      this.board[x][y] = value
+    }
+  }
+
+  getPosition() {
+    return this.clickedBoxPosition
   }
 }
