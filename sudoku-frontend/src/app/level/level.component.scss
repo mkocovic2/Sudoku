@@ -13,5 +13,10 @@
     }
     .levels {
         text-align: center;
+        div {
+            background: rgb(217, 217, 217, 0.4);
+            color: black;
+            font-size: 14px;
+        }
     }
 }
