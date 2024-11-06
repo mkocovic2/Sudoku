@@ -1,0 +1,22 @@
+@import '../../styles/variables.scss';
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: $primary-font-family;
+    height: calc(100vh - 100px);
+    .name {
+        font-size: x-large;
+        font-weight: 700;
+    }
+    .levels {
+        text-align: center;
+        div {
+            background: rgb(217, 217, 217, 0.4);
+            color: black;
+            font-size: 14px;
+        }
+    }
+}

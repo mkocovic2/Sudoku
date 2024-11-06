@@ -1,0 +1,127 @@
+@import '../../styles/variables.scss';
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: $primary-font-family;
+    .top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin: 5px 10px;
+        .sub-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+    .row {
+        display: flex;
+        .col {
+            position: relative;
+            border: 1px solid $primary-color;
+            padding: 2px;
+            width: 22px;
+            height: 22px;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            .note-container {
+                position: absolute;
+                font-size: 6.5px;
+                width: 22px;
+                height: 19px;
+                top: 0.5px;
+                left: 2px;
+                .note-row {
+                    display: flex;
+                    justify-content: space-between;
+                    .note-col {
+                        width: 33.33%;
+                    }
+                }
+            }
+        }
+        .selected {
+            background: rgb(218, 218, 224);
+        }
+        .br-l {
+            border-left: 2px solid black;
+        }
+        .br-r {
+            border-right: 2px solid black;
+        }
+        .br-t {
+            border-top: 2px solid black;
+        }
+        .br-b {
+            border-bottom: 2px solid black;
+        }
+    }
+    .entries {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .entry {
+            padding: 5px;
+            width: 19px;
+            height: 19px;
+            text-align: center;
+            margin: 5px 0px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    }
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 0px;
+        button {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: color ease-in-out 0.3s;
+
+            i {
+                font-size: 16px;
+                margin-bottom: 5px;
+            }
+            .name {
+                font-size: 11px;
+            }
+            &:active {
+                i,.name {
+                    color: blue;
+                }
+            }
+            &:last-child {
+                position: relative;
+                .note-mode {
+                    position: absolute;
+                    width: 18px;
+                    font-size: 9px;
+                    font-weight: 600;
+                    left: -12px;
+                    top: 0px;
+                    background: $primary-color;
+                    padding: 3px 5px;
+                    border-radius: 15px;
+                }
+            }
+        }
+        .note {
+            .note-mode {
+                background: $tertiary-color !important;
+                color: white;
+            }
+        }
+    }
+}
