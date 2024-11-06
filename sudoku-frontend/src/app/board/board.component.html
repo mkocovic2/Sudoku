@@ -1,0 +1,50 @@
+<div class="container">
+    <div class="board">
+        <div class="top">
+            <div class="sub-container">
+                <div class="title">Difficulty</div>
+                <div class="level">Easy</div>
+            </div>
+            <div class="sub-container">
+                <div class="title">Time</div>
+                <div class="level">00:00</div>
+            </div>
+        </div>
+        <div class="row" *ngFor="let box of boxes; let i = index">
+            <div class="col" (click)="selectCell(i, j)" *ngFor="let box of boxes; let j = index" 
+            [ngClass]="{'br-l': j == 0, 'br-r': j == 2 || j == 5 || j == 8, 'br-t': i == 0, 'br-b': i == 2 || i == 5 || i == 8,
+                        'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j}">                
+                {{board[i][j] > 0 ? board[i][j] : ''}}
+                <div class="note-container">
+                    <div class="note-row" *ngFor="let noteBox of noteBoxes; let n = index">
+                        <div class="note-col" *ngFor="let noteCol of noteBoxes; let m = index">
+                             {{noteBoard[i][j][n][m] > 0 ? noteBoard[i][j][n][m] : ' '}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button (click)="setAction('UNDO')">
+                <i class="fa-solid fa-rotate-left"></i>
+                <div class="name">Undo</div>
+            </button>
+            <button (click)="setAction('CHECK')">
+                <i class="fa-solid fa-gear"></i>
+                <div class="name">Check</div>
+            </button>
+            <button (click)="setAction('HINT')">
+                <i class="fa-regular fa-lightbulb"></i>
+                <div class="name">Hint</div>
+            </button>
+            <button (click)="setAction('NOTE')" [ngClass]="{'note': noteMode}">
+                <i class="fa-regular fa-note-sticky"></i>
+                <div class="name">Note</div>
+                <div class="note-mode">{{noteMode ? 'ON' : 'OFF'}}</div>
+            </button>
+        </div>
+        <div class="entries">
+            <div class="entry" (click)="setCell(i)" *ngFor="let entry of boxes; let i = index">{{i+1}}</div>
+        </div>
+    </div>
+</div>
