@@ -31,6 +31,12 @@ class SudokuPuzzle:
                     return False
         return True
 
+    def is_filled(self):
+        for row in self.grid:
+            for cell in row:
+                if cell.get_inserted_value() == None:
+                    return False
+        return True
 
 
     # Display methods for testing
