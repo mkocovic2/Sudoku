@@ -1,14 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-board',
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.scss']
 })
-export class BoardComponent {
+export class BoardComponent implements OnInit {
 
   boxes = Array(9)
   board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
+  puzzleSolution: number[][] = Array.from({length: 9}, () => Array(9).fill(0))
   clickedBoxPosition: number[] = [-1, -1]
   noteMode: boolean = false
   action: string = ''
@@ -20,6 +21,12 @@ export class BoardComponent {
         )
     )
   );
+  @ViewChild('time', { static: false }) time!: any;
+  isTimePaused: boolean = false
+
+  ngOnInit(): void {
+    
+  }
 
   selectCell(i:number, j:number) {
     this.clickedBoxPosition = [i, j]
@@ -55,7 +62,53 @@ export class BoardComponent {
   setAction(action: string) {
     if (action == 'NOTE') {
       this.noteMode = !this.noteMode
-      console.log(this.noteBoard)
     }
+    if (action == 'CHECK') {
+      this.action = action
+    }
+  }
+
+  filterWrongMoves() {
+    const wrongMoves = new Map();
+    for(let i=0; i<9; i++) {
+      for(let j=0; j<9; j++) {
+        if(this.puzzleSolution[i][j] != this.board[i][j]) {
+          wrongMoves.set(JSON.stringify([i,j]), [i,j])
+        }
+      }
+    }
+
+    return wrongMoves
+  }
+
+  compareWithSolution(i: number, j: number) {
+    const wrongMoves = this.filterWrongMoves()
+    if (wrongMoves.has(JSON.stringify([i,j]))) {
+      return true
+    }
+    return false
+  }
+
+  checkPuzzle(i: number, j: number) {
+    if (this.compareWithSolution(i,j) && this.action == 'CHECK') {
+      return true
+    }
+    return false
+  }
+
+  handleTime() {
+    this.isTimePaused = !this.isTimePaused
+    if (this.isTimePaused){
+      this.time.stop()
+    } else {
+      this.time.resume()
+    }
+  }
+
+  clearNote(x: number, y: number ) {
+    if (this.board[x][y] > 0) {
+      return false
+    }
+    return true
   }
 }

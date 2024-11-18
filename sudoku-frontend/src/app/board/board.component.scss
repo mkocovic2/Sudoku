@@ -2,63 +2,118 @@
 
 .container {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
     font-family: $primary-font-family;
+    .top-container {
+        display: flex;
+        justify-content: space-between;
+        .back, .menu {
+            cursor: pointer;
+        }
+         .menu {
+            margin-right: 8px;
+        }
+    }
     .top {
         display: flex;
         justify-content: space-between;
         font-size: 12px;
         margin: 5px 10px;
+        .time {
+            display: flex;
+            button {
+                background: none;
+                border: none;
+                cursor: pointer;
+                i {
+                    font-size: medium;
+                    width: 16px;
+                }
+            }
+            .counter {
+                width: 28px;
+            }
+        }
         .sub-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            .title {
+                font-weight: 600;
+            }
         }
     }
-    .row {
-        display: flex;
-        .col {
-            position: relative;
-            border: 1px solid $primary-color;
-            padding: 2px;
-            width: 22px;
-            height: 22px;
-            text-align: center;
-            color: rgba(0, 0, 0, 0.7);
-            cursor: pointer;
-            .note-container {
-                position: absolute;
-                font-size: 6.5px;
-                width: 22px;
-                height: 19px;
-                top: 0.5px;
-                left: 2px;
-                .note-row {
-                    display: flex;
-                    justify-content: space-between;
-                    .note-col {
-                        width: 33.33%;
+    .board-container {
+        position: relative;
+        .pause-container {
+            position: absolute;
+            width: calc((28px) * 9);
+            height: calc((28px) * 9);
+            background: black;
+            z-index: 1;
+            opacity: 0.1;
+        }
+        .pause {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            width: calc((28px) * 9);
+            height: calc((28px) * 9);
+            color: rgb(84, 79, 79);
+            font-size: 14px;
+            z-index: 2;
+            animation: zoomInOut 1.2s infinite ease-in-out;
+        }
+        .row {
+            display: flex;
+            .col {
+                position: relative;
+                border: 1px solid $primary-color;
+                padding: $cell-padding;
+                width: $cell-size;
+                height: $cell-size;
+                text-align: center;
+                color: rgba(0, 0, 0, 0.7);
+                cursor: pointer;
+                .note-container {
+                    position: absolute;
+                    font-size: 6.5px;
+                    width: 22px;
+                    height: 19px;
+                    top: 0.5px;
+                    left: 2px;
+                    .note-row {
+                        display: flex;
+                        justify-content: space-between;
+                        .note-col {
+                            width: 33.33%;
+                        }
                     }
                 }
             }
-        }
-        .selected {
-            background: rgb(218, 218, 224);
-        }
-        .br-l {
-            border-left: 2px solid black;
-        }
-        .br-r {
-            border-right: 2px solid black;
-        }
-        .br-t {
-            border-top: 2px solid black;
-        }
-        .br-b {
-            border-bottom: 2px solid black;
+            .selected {
+                background: rgb(218, 218, 224);
+            }
+            .br-l {
+                border-left: 2px solid black;
+            }
+            .br-r {
+                border-right: 2px solid black;
+            }
+            .br-t {
+                border-top: 2px solid black;
+            }
+            .br-b {
+                border-bottom: 2px solid black;
+            }
+            .wrong-pos {
+             color: red;       
+            }
         }
     }
     .entries {
@@ -124,4 +179,20 @@
             }
         }
     }
+    .disabled {
+        pointer-events: none;
+        opacity: 0.5;
+      }      
 }
+
+@keyframes zoomInOut {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
