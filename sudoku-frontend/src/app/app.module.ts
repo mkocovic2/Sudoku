@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { LevelComponent } from './level/level.component';
 import { NewGameComponent } from './new-game/new-game.component';
 import { BoardComponent } from './board/board.component';
+import { CdTimerModule } from 'angular-cd-timer';
 
 @NgModule({
   declarations: [
@@ -16,9 +17,11 @@ import { BoardComponent } from './board/board.component';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    CdTimerModule
   ],
   providers: [],
   bootstrap: [AppComponent]
 })
+
 export class AppModule { }
