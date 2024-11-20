@@ -20,13 +20,16 @@ class SudokuCell:
 
     def set_correct_value(self, correct_value: int):
         self._correct_value = correct_value
-
+        #This may need to change based on solving algo
     # Getter and Setter for inserted value
     def get_inserted_value(self):
         return self._inserted_value
 
     def set_inserted_value(self, inserted_value: int):
-        self._inserted_value = inserted_value
+        if self._inserted_value == inserted_value:
+            self._inserted_value = None
+        else:
+            self._inserted_value = inserted_value
         self._is_correct = inserted_value == self._correct_value
 
     # Getter and Setter for is_correct
