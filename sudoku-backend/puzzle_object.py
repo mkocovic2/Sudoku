@@ -1,4 +1,5 @@
 from cell_object import SudokuCell
+from history_stack import HistoryStack
 
 class SudokuPuzzle:
     def __init__(self, size: int = 9):
@@ -6,6 +7,7 @@ class SudokuPuzzle:
             raise ValueError("Only 4x4 and 9x9 Sudoku puzzles are supported.")
         self.size = size
         self.grid = [[SudokuCell((row, col), correct_value=None) for col in range(size)] for row in range(size)]
+        self.history = HistoryStack()
 
     # Method to initialize the puzzle with correct values
     def set_correct_values(self, correct_values: list):
@@ -37,6 +39,39 @@ class SudokuPuzzle:
                 if cell.get_inserted_value() == None:
                     return False
         return True
+
+    def get_puzzle_state(self):
+        """
+        Get a snapshot of the current puzzle grid.
+        :return: A list of lists representing the grid's current state.
+        """
+        return [[cell.get_inserted_value() for cell in row] for row in self.grid]
+
+    def undo(self):
+        """
+        Undo the most recent action by restoring the previous puzzle state.
+        """
+        last_entry = self.history.pop()
+        if last_entry:
+            action = last_entry["action"]
+            puzzle_state = last_entry["puzzle_state"]
+            # Restore the puzzle state
+            for row in range(self.size):
+                for col in range(self.size):
+                    self.grid[row][col].set_inserted_value(puzzle_state[row][col])
+
+
+def undo_until_no_incorrect(self):
+    """
+    Undo actions until there are no incorrect cells in the puzzle or the history stack is empty.
+    """
+    while self.history.peek() and any(
+        cell.get_correctness() is False
+        for row in self.grid
+        for cell in row
+    ):
+        self.undo()
+
 
 
     # Display methods for testing
