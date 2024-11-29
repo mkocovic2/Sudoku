@@ -1,3 +1,5 @@
+import string
+import random
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -18,10 +20,16 @@ puzzles_collections = {
 }
 user_sessions_collection = db['UserSessions']
 
+def generate_board_id(length=8):
+    """
+    Generate a random board ID consisting of uppercase letters and numbers
+    """
+    characters = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
 @app.route('/start_puzzle', methods=['POST'])
 def start_puzzle():
     data = request.json
-    user_id = ObjectId(data.get('user_id'))
     difficulty = data.get('difficulty', 'Easy')
     puzzle_size = data.get('puzzle_size', 9)
 
@@ -34,17 +42,16 @@ def start_puzzle():
     if 'puzzle' not in puzzle_doc:
         return jsonify({'error': 'Puzzle does not have a grid'}), 400
 
-    # Create SudokuPuzzle instance
-    puzzle = SudokuPuzzle(size=puzzle_size)
-    puzzle.set_correct_values(puzzle_doc['solution'])
+    # Generate a unique board ID
+    board_id = generate_board_id()
 
     # Prepare user session document
     user_session = {
-        'user_id': user_id,
+        'board_id': board_id,  # Add board_id for easy retrieval
         'puzzle_id': puzzle_doc['_id'],
         'difficulty': difficulty,
         'puzzle_size': puzzle_size,
-        'current_grid_state': [[None for _ in range(puzzle_size)] for _ in range(puzzle_size)],
+        'current_grid_state': puzzle_doc['puzzle'],
         'history_stack': [],
         'start_time': datetime.utcnow(),
         'last_updated': datetime.utcnow(),
@@ -57,7 +64,29 @@ def start_puzzle():
 
     return jsonify({
         'session_id': str(session_id),
-        'initial_grid': puzzle_doc['puzzle']  # Updated field name
+        'board_id': board_id,
+        'initial_grid': puzzle_doc['puzzle']
+    }), 200
+
+@app.route('/load_board', methods=['POST'])
+def load_board():
+    """
+    Load a board using its board_id
+    """
+    data = request.json
+    board_id = data.get('board_id')
+
+    # Find the session with the matching board_id
+    session = user_sessions_collection.find_one({'board_id': board_id})
+    
+    if not session:
+        return jsonify({'error': 'Board not found'}), 404
+
+    return jsonify({
+        'session_id': str(session['_id']),
+        'board_id': session['board_id'],
+        'difficulty': session['difficulty'],
+        'current_grid_state': session['current_grid_state']
     }), 200
 
 
@@ -84,12 +113,20 @@ def make_move():
 
     # Update grid state and history
     current_grid = session['current_grid_state']
+    
+    # Store previous value for undo functionality
+    previous_value = current_grid[row][col]
     current_grid[row][col] = value
 
     # Push to history stack
     history_entry = {
         'action': f'Set cell ({row}, {col}) to {value}',
-        'puzzle_state': current_grid
+        'cell_details': {
+            'row': row,
+            'col': col,
+            'previous_value': previous_value,
+            'new_value': value
+        }
     }
 
     user_sessions_collection.update_one(
@@ -122,13 +159,24 @@ def undo_move():
 
     # Pop last history entry
     if session['history_stack']:
-        last_state = session['history_stack'].pop()
+        last_move = session['history_stack'].pop()
+        
+        # Retrieve the cell details
+        row = last_move['cell_details']['row']
+        col = last_move['cell_details']['col']
+        previous_value = last_move['cell_details']['previous_value']
+        
+        # Get current grid state
+        current_grid = session['current_grid_state']
+        
+        # Revert the cell to its previous value
+        current_grid[row][col] = previous_value
         
         user_sessions_collection.update_one(
             {'_id': session_id},
             {
                 '$set': {
-                    'current_grid_state': last_state['puzzle_state'],
+                    'current_grid_state': current_grid,
                     'history_stack': session['history_stack'],
                     'last_updated': datetime.utcnow()
                 }
@@ -137,7 +185,7 @@ def undo_move():
 
         return jsonify({
             'success': True, 
-            'updated_grid': last_state['puzzle_state']
+            'updated_grid': current_grid
         }), 200
     else:
         return jsonify({'error': 'No moves to undo'}), 400
@@ -176,6 +224,65 @@ def check_solution():
     return jsonify({
         'is_solved': is_solved,
         'time_taken': (datetime.utcnow() - session['start_time']).total_seconds() if is_solved else None
+    }), 200
+
+@app.route('/undo_until_correct', methods=['POST'])
+def undo_until_correct():
+    """
+    Undo moves until the board is in a correct state
+    Request body should contain:
+    - session_id
+    """
+    data = request.json
+    session_id = ObjectId(data['session_id'])
+
+    # Retrieve user session
+    session = user_sessions_collection.find_one({'_id': session_id})
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Retrieve the original puzzle solution
+    puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
+    solution = puzzle_doc['solution']
+
+    # Create a copy of the current grid to modify
+    current_grid = session['current_grid_state']
+    history_stack = session['history_stack']
+
+    # Undo moves until the board matches the solution up to the current point
+    while history_stack:
+        # Get the last move
+        last_move = history_stack.pop()
+        
+        # Revert the specific cell
+        row = last_move['cell_details']['row']
+        col = last_move['cell_details']['col']
+        previous_value = last_move['cell_details']['previous_value']
+        
+        # Check if this move was incorrect
+        if current_grid[row][col] != solution[row][col]:
+            # Revert the cell
+            current_grid[row][col] = previous_value
+        else:
+            # If we've reached a correct configuration, put the move back and stop
+            history_stack.append(last_move)
+            break
+
+    # Update the user session
+    user_sessions_collection.update_one(
+        {'_id': session_id},
+        {
+            '$set': {
+                'current_grid_state': current_grid,
+                'history_stack': history_stack,
+                'last_updated': datetime.utcnow()
+            }
+        }
+    )
+
+    return jsonify({
+        'success': True, 
+        'updated_grid': current_grid
     }), 200
 
 if __name__ == '__main__':
