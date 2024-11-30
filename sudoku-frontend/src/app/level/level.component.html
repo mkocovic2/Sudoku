@@ -1,8 +1,8 @@
 <div class="container">
     <div class="name">Sudoku</div>
     <div class="levels">
-        <div class="app-btn" routerLink="/board">Easy</div>
-        <div class="app-btn" routerLink="/board">Medium</div>
-        <div class="app-btn" routerLink="/board">Hard</div>
+        <div class="app-btn" (click)="startPuzzle('Easy')" routerLink="/board">Easy</div>
+        <div class="app-btn" (click)="startPuzzle('Medium')" routerLink="/board">Medium</div>
+        <div class="app-btn" (click)="startPuzzle('Hard')" routerLink="/board">Hard</div>
     </div>
 </div>
