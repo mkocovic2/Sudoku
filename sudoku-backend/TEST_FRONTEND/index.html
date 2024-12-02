@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sudoku Puzzle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            grid-gap: 1px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+        .sudoku-cell {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #333;
+            text-align: center;
+            font-size: 20px;
+            background-color: white;
+            outline: none;
+        }
+        .sudoku-cell.initial {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            color: #666;
+        }
+        .sudoku-cell:hover {
+            background-color: #e0e0e0;
+        }
+        #controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .button {
+            margin: 0 10px 10px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin: 10px 0;
+            font-weight: bold;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sudoku Puzzle</h1>
+    <div id="controls">
+        <button class="button" onclick="startNewPuzzle('Easy')">New Easy Puzzle</button>
+        <button class="button" onclick="startNewPuzzle('Medium')">New Medium Puzzle</button>
+        <button class="button" onclick="startNewPuzzle('Hard')">New Hard Puzzle</button>
+        <button class="button" onclick="loadBoard()">Load Board</button>
+        <br>
+        <button class="button" onclick="undoMove()">Undo</button>
+        <button class="button" onclick="undoUntilCorrect()">Undo Until Correct</button>
+        <button class="button" onclick="checkSolution()">Check Solution</button>
+    </div>
+    <div id="sudoku-grid"></div>
+    <div id="status"></div>
+
+    <script>
+        let sessionId = null;
+        let boardId = null;
+        const gridElement = document.getElementById('sudoku-grid');
+        const statusElement = document.getElementById('status');
+        const API_URL = 'http://exodus.viewdns.net:4655';
+
+        function startNewPuzzle(difficulty) {
+            fetch(`${API_URL}/start_puzzle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    difficulty,
+                    user_id: generateUserId() 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                sessionId = data.session_id;
+                boardId = data.board_id;
+                renderGrid(data.initial_grid);
+                statusElement.textContent = `New ${difficulty} puzzle started. Board ID: ${boardId}`;
+            })
+            .catch(error => {
+                console.error('Error starting puzzle:', error);
+                statusElement.textContent = 'Failed to start puzzle';
+            });
+        }
+
+        function renderGrid(initialGrid) {
+			gridElement.innerHTML = '';
+			gridElement.style.gridTemplateColumns = 'repeat(9, 50px)';
+
+			for (let row = 0; row < 9; row++) {
+				for (let col = 0; col < 9; col++) {
+					const cell = document.createElement('input');
+					cell.type = 'text';
+					cell.className = 'sudoku-cell';
+					cell.maxLength = 1;
+					cell.dataset.row = row;
+					cell.dataset.col = col;
+
+					// Modified logic for initial values
+					// Treat null, 0, or empty string as an empty cell
+					if (initialGrid[row][col] !== null && initialGrid[row][col] !== 0) {
+						cell.value = initialGrid[row][col];
+						cell.disabled = true;
+						cell.classList.add('initial');
+					} else {
+						cell.value = ''; // Explicitly set to empty string
+					}
+
+					cell.addEventListener('input', function() {
+						// Only allow numeric input
+						this.value = this.value.replace(/[^1-9]/g, '');
+						
+						const value = this.value === '' ? null : parseInt(this.value);
+						makeMove(row, col, value);
+					});
+
+					gridElement.appendChild(cell);
+				}
+			}
+		}
+
+        function generateUserId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
+        function loadBoard() {
+            const boardIdInput = prompt('Enter Board ID:');
+            if (!boardIdInput) return;
+
+            fetch(`${API_URL}/load_board`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ board_id: boardIdInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                sessionId = data.session_id;
+                boardId = data.board_id;
+                renderGrid(data.current_grid_state);
+                statusElement.textContent = `Loaded ${data.difficulty} puzzle. Board ID: ${boardId}`;
+            })
+            .catch(error => {
+                console.error('Error loading board:', error);
+                statusElement.textContent = 'Failed to load board';
+            });
+        }
+
+        function makeMove(row, col, value) {
+			if (sessionId === null) {
+				statusElement.textContent = 'Please start a new puzzle first';
+				return;
+			}
+
+			fetch(`${API_URL}/make_move`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					session_id: sessionId,
+					row,
+					col,
+					value
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					// Update the grid to reflect the move
+					const cell = gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+					if (cell && !cell.classList.contains('initial')) {
+						// Set to empty string if value is null
+						cell.value = value || '';
+					}
+					statusElement.textContent = value 
+						? `Moved: (${row}, ${col}) = ${value}` 
+						: `Cleared cell (${row}, ${col})`;
+				}
+			})
+			.catch(error => {
+				console.error('Error making move:', error);
+				statusElement.textContent = 'Failed to make move';
+			});
+		}
+
+        function undoMove() {
+            if (sessionId === null) {
+                statusElement.textContent = 'Please start a new puzzle first';
+                return;
+            }
+
+            fetch(`${API_URL}/undo_move`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update grid with previous state
+                    data.updated_grid.forEach((row, rowIndex) => {
+                        row.forEach((value, colIndex) => {
+                            const cell = gridElement.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+                            if (cell && !cell.classList.contains('initial')) {
+                                cell.value = value || '';
+                            }
+                        });
+                    });
+                    statusElement.textContent = 'Last move undone';
+                }
+            })
+            .catch(error => {
+                console.error('Error undoing move:', error);
+                statusElement.textContent = 'Failed to undo move';
+            });
+        }
+
+        function undoUntilCorrect() {
+            if (sessionId === null) {
+                statusElement.textContent = 'Please start a new puzzle first';
+                return;
+            }
+
+            fetch(`${API_URL}/undo_until_correct`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update entire grid
+                    data.updated_grid.forEach((row, rowIndex) => {
+                        row.forEach((value, colIndex) => {
+                            const cell = gridElement.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+                            if (cell && !cell.classList.contains('initial')) {
+                                cell.value = value || '';
+                            }
+                        });
+                    });
+                    statusElement.textContent = 'Undone to last correct configuration';
+                }
+            })
+            .catch(error => {
+                console.error('Error undoing until correct:', error);
+                statusElement.textContent = 'Failed to undo until correct';
+            });
+        }
+
+        function checkSolution() {
+            if (sessionId === null) {
+                statusElement.textContent = 'Please start a new puzzle first';
+                return;
+            }
+
+            fetch(`${API_URL}/check_solution`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_solved) {
+                    statusElement.textContent = `Congratulations! Puzzle solved in ${data.time_taken.toFixed(2)} seconds`;
+                } else {
+                    statusElement.textContent = 'Puzzle is not yet solved. Keep trying!';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking solution:', error);
+                statusElement.textContent = 'Failed to check solution';
+            });
+        }
+    </script>
+</body>
+</html>
