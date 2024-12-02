@@ -1,5 +1,6 @@
 from cell_object import SudokuCell
 from history_stack import HistoryStack
+import random
 
 
 class SudokuPuzzle:
@@ -12,6 +13,7 @@ class SudokuPuzzle:
         self.history = HistoryStack()
 
     # Method to initialize the puzzle with correct values
+    #Springboard for giving correct vals to each cell init
     def set_correct_values(self, correct_values: list):
         if len(correct_values) != self.size or any(len(row) != self.size for row in correct_values):
             raise ValueError(
@@ -26,7 +28,8 @@ class SudokuPuzzle:
 
     # Set inserted value for a specific cell
     def set_inserted_value(self, row: int, col: int, value: int):
-        self.grid[row][col].set_inserted_value(value)
+        if self.grid[row][col].get_is_initialized == False:
+            self.grid[row][col].set_inserted_value(value)
 
     # Check if the puzzle is solved
     def is_solved(self):
@@ -75,6 +78,40 @@ def undo_until_no_incorrect(self):
         for cell in row
     ):
         self.undo()
+
+
+def hint(self, selected_cell=None):
+    """
+    Reveal the correct value for the selected cell, or for a random empty cell if no cell is selected.
+    
+    :param selected_cell: Tuple of (row, col) for the selected cell. If None, a random empty cell is revealed.
+    :return: Tuple containing the revealed cell's (row, col) and the correct value, or None if no empty cells exist.
+    """
+    if selected_cell:
+        row, col = selected_cell
+        cell = self.get_cell(row, col)
+        if cell.is_empty() | cell.is_correct == False:
+            cell.set_inserted_value(cell.get_correct_value())
+            return row, col, cell.get_correct_value()
+ 
+    else:
+        # Find all empty cells
+        empty_cells = [
+            (row_idx, col_idx)
+            for row_idx, row in enumerate(self.grid)
+            for col_idx, cell in enumerate(row)
+            if cell.is_empty()
+        ]
+        if not empty_cells:
+            print("No empty cells available to reveal.")
+            return None
+        
+        # Choose a random empty cell
+        row, col = random.choice(empty_cells)
+        cell = self.get_cell(row, col)
+        cell.set_inserted_value(cell.get_correct_value())
+        return row, col, cell.get_correct_value()
+
 
     # Display methods for testing
 
