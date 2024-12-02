@@ -61,15 +61,23 @@
 <body>
     <h1>Sudoku Puzzle</h1>
     <div id="controls">
-        <button class="button" onclick="startNewPuzzle('Easy')">New Easy Puzzle</button>
-        <button class="button" onclick="startNewPuzzle('Medium')">New Medium Puzzle</button>
-        <button class="button" onclick="startNewPuzzle('Hard')">New Hard Puzzle</button>
-        <button class="button" onclick="loadBoard()">Load Board</button>
-        <br>
-        <button class="button" onclick="undoMove()">Undo</button>
-        <button class="button" onclick="undoUntilCorrect()">Undo Until Correct</button>
-        <button class="button" onclick="checkSolution()">Check Solution</button>
-    </div>
+		<label for="boardSize">Select Board Size:</label>
+		<select id="boardSize">
+			<option value="9">9x9</option>
+			<option value="4">4x4</option>
+		</select>
+		<br><br>
+		
+		<button class="button" onclick="startNewPuzzle('Easy')">New Easy Puzzle</button>
+		<button class="button" onclick="startNewPuzzle('Medium')">New Medium Puzzle</button>
+		<button class="button" onclick="startNewPuzzle('Hard')">New Hard Puzzle</button>
+		<button class="button" onclick="loadBoard()">Load Board</button>
+		<br>
+		<button class="button" onclick="undoMove()">Undo</button>
+		<button class="button" onclick="undoUntilCorrect()">Undo Until Correct</button>
+		<button class="button" onclick="checkSolution()">Check Solution</button>
+	</div>
+
     <div id="sudoku-grid"></div>
     <div id="status"></div>
 
@@ -81,35 +89,41 @@
         const API_URL = 'http://exodus.viewdns.net:4655';
 
         function startNewPuzzle(difficulty) {
-            fetch(`${API_URL}/start_puzzle`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    difficulty,
-                    user_id: generateUserId() 
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                sessionId = data.session_id;
-                boardId = data.board_id;
-                renderGrid(data.initial_grid);
-                statusElement.textContent = `New ${difficulty} puzzle started. Board ID: ${boardId}`;
-            })
-            .catch(error => {
-                console.error('Error starting puzzle:', error);
-                statusElement.textContent = 'Failed to start puzzle';
-            });
-        }
+			const puzzle_size = +document.getElementById('boardSize').value;			
+			
+			fetch(`${API_URL}/start_puzzle`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ 
+					difficulty,
+					puzzle_size,
+					user_id: generateUserId() 
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				sessionId = data.session_id;
+				boardId = data.board_id;
+				renderGrid(data.initial_grid);
+				statusElement.textContent = `New ${difficulty} puzzle started. Board ID: ${boardId}`;
+			})
+			.catch(error => {
+				console.error('Error starting puzzle:', error);
+				statusElement.textContent = 'Failed to start puzzle';
+			});
+		}
 
         function renderGrid(initialGrid) {
-			gridElement.innerHTML = '';
-			gridElement.style.gridTemplateColumns = 'repeat(9, 50px)';
+			// Get the selected board size
+			const puzzle_size = +document.getElementById('boardSize').value;
 
-			for (let row = 0; row < 9; row++) {
-				for (let col = 0; col < 9; col++) {
+			gridElement.innerHTML = '';
+			gridElement.style.gridTemplateColumns = `repeat(${puzzle_size}, 50px)`; // Dynamically set the number of columns
+
+			for (let row = 0; row < puzzle_size; row++) {
+				for (let col = 0; col < puzzle_size; col++) {
 					const cell = document.createElement('input');
 					cell.type = 'text';
 					cell.className = 'sudoku-cell';
@@ -117,9 +131,8 @@
 					cell.dataset.row = row;
 					cell.dataset.col = col;
 
-					// Modified logic for initial values
-					// Treat null, 0, or empty string as an empty cell
-					if (initialGrid[row][col] !== null && initialGrid[row][col] !== 0) {
+					// Check the initial value for the cell (null, 0, or empty string are treated as empty cells)
+					if (initialGrid[row] && initialGrid[row][col] !== null && initialGrid[row][col] !== 0) {
 						cell.value = initialGrid[row][col];
 						cell.disabled = true;
 						cell.classList.add('initial');
@@ -127,12 +140,11 @@
 						cell.value = ''; // Explicitly set to empty string
 					}
 
+					// Add event listener for user input
 					cell.addEventListener('input', function() {
-						// Only allow numeric input
-						this.value = this.value.replace(/[^1-9]/g, '');
-						
+						this.value = this.value.replace(/[^1-9]/g, ''); // Only allow numeric input
 						const value = this.value === '' ? null : parseInt(this.value);
-						makeMove(row, col, value);
+						makeMove(row, col, value); // Make the move
 					});
 
 					gridElement.appendChild(cell);
