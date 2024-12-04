@@ -32,6 +32,9 @@
             font-weight: bold;
             color: #666;
         }
+        .sudoku-cell.incorrect {
+            background-color: #ffcccc;
+        }
         .sudoku-cell:hover {
             background-color: #e0e0e0;
         }
@@ -117,11 +120,10 @@
 		}
 
         function renderGrid(initialGrid) {
-			// Get the selected board size
 			const puzzle_size = +document.getElementById('boardSize').value;
 
 			gridElement.innerHTML = '';
-			gridElement.style.gridTemplateColumns = `repeat(${puzzle_size}, 50px)`; // Dynamically set the number of columns
+			gridElement.style.gridTemplateColumns = `repeat(${puzzle_size}, 50px)`; 
 
 			for (let row = 0; row < puzzle_size; row++) {
 				for (let col = 0; col < puzzle_size; col++) {
@@ -132,27 +134,76 @@
 					cell.dataset.row = row;
 					cell.dataset.col = col;
 
-					// Check the initial value for the cell (null, 0, or empty string are treated as empty cells)
 					if (initialGrid[row] && initialGrid[row][col] !== null && initialGrid[row][col] !== 0) {
 						cell.value = initialGrid[row][col];
 						cell.disabled = true;
 						cell.classList.add('initial');
 					} else {
-						cell.value = ''; // Explicitly set to empty string
+						cell.value = ''; 
 					}
 
-					// Add event listener for user input
+					// Modified event listener to include correctness check
 					cell.addEventListener('input', function() {
 						this.value = this.value.replace(/[^1-9]/g, ''); // Only allow numeric input
 						const value = this.value === '' ? null : parseInt(this.value);
-						makeMove(row, col, value); // Make the move
+						
+						// First make the move
+						makeMove(row, col, value);
+						
+						// Then check cell correctness if a value is entered
+						if (value !== null) {
+							checkCellCorrectness(row, col, value);
+						}
 					});
 
 					gridElement.appendChild(cell);
 				}
 			}
 		}
+		
+		function checkCellCorrectness(row, col, value) {
+            if (sessionId === null) {
+                statusElement.textContent = 'Please start a new puzzle first';
+                return;
+            }
 
+            fetch(`${API_URL}/check_cell_correctness`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    row,
+                    col,
+                    value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const cell = gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                
+                if (cell && !cell.classList.contains('initial')) {
+                    if (!data.is_correct) {
+                        // Mark cell as incorrect
+                        cell.classList.add('incorrect');
+                        
+                        // Optional: Show detailed error message
+                        statusElement.textContent = 
+                            `Incorrect value for cell (${row}, ${col}). Correct value is ${data.correct_value}`;
+                    } else {
+                        // Remove incorrect class if previously added
+                        cell.classList.remove('incorrect');
+                        statusElement.textContent = ''; // Clear status
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error checking cell correctness:', error);
+                statusElement.textContent = 'Failed to check cell correctness';
+            });
+        }
+		
         function generateUserId() {
             return Math.random().toString(36).substr(2, 9);
         }

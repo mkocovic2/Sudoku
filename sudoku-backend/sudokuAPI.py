@@ -302,5 +302,108 @@ def undo_until_correct():
         'updated_grid': current_grid
     }), 200
 
+@app.route('/get_hint', methods=['POST'])
+def get_hint():
+    """
+    Provide a hint for the Sudoku puzzle
+    Request body should contain:
+    - session_id
+    - selected_cell (optional): dictionary with 'row' and 'col' keys
+    """
+    data = request.json
+    session_id = ObjectId(data['session_id'])
+    selected_cell = data.get('selected_cell')
+
+    # Retrieve user session
+    session = user_sessions_collection.find_one({'_id': session_id})
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Retrieve the puzzle solution
+    puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
+    solution = puzzle_doc['solution']
+
+    # Prepare current grid state
+    current_grid = session['current_grid_state']
+
+    # Determine hint cell
+    if selected_cell:
+        row = selected_cell['row']
+        col = selected_cell['col']
+        
+        # Check if the selected cell is empty or incorrect
+        if current_grid[row][col] == 0 or current_grid[row][col] != solution[row][col]:
+            current_grid[row][col] = solution[row][col]
+            hint_row, hint_col = row, col
+        else:
+            return jsonify({'error': 'Selected cell is already correct'}), 400
+    else:
+        # Find empty or incorrect cells
+        empty_or_incorrect_cells = [
+            (r, c) for r in range(len(current_grid)) 
+            for c in range(len(current_grid[r])) 
+            if current_grid[r][c] == 0 or current_grid[r][c] != solution[r][c]
+        ]
+
+        if not empty_or_incorrect_cells:
+            return jsonify({'error': 'No cells available for hint'}), 400
+
+        # Choose a random empty or incorrect cell
+        hint_row, hint_col = random.choice(empty_or_incorrect_cells)
+        current_grid[hint_row][hint_col] = solution[hint_row][hint_col]
+
+    # Update the user session with the new grid state
+    user_sessions_collection.update_one(
+        {'_id': session_id},
+        {
+            '$set': {
+                'current_grid_state': current_grid,
+                'last_updated': datetime.utcnow()
+            },
+            '$push': {'history_stack': {
+                'action': f'Hint: Set cell ({hint_row}, {hint_col}) to {current_grid[hint_row][hint_col]}',
+                'cell_details': {
+                    'row': hint_row,
+                    'col': hint_col,
+                    'previous_value': 0,
+                    'new_value': current_grid[hint_row][hint_col]
+                }
+            }}
+        }
+    )
+
+    return jsonify({
+        'success': True, 
+        'hint_row': hint_row, 
+        'hint_col': hint_col, 
+        'hint_value': current_grid[hint_row][hint_col],
+        'updated_grid': current_grid
+    }), 200
+
+@app.route('/check_cell_correctness', methods=['POST'])
+def check_cell_correctness():
+    data = request.json
+    session_id = ObjectId(data['session_id'])
+    row = data['row']
+    col = data['col']
+    value = data['value']
+
+    # Retrieve user session and puzzle
+    session = user_sessions_collection.find_one({'_id': session_id})
+    if not session:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Retrieve the original puzzle solution
+    puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
+    solution = puzzle_doc['solution']
+
+    # Check if the entered value matches the solution
+    is_correct = (solution[row][col] == value)
+
+    return jsonify({
+        'is_correct': is_correct,
+        'correct_value': solution[row][col]
+    }), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=4655)
