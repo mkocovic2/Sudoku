@@ -75,6 +75,7 @@
 		<br>
 		<button class="button" onclick="undoMove()">Undo</button>
 		<button class="button" onclick="undoUntilCorrect()">Undo Until Correct</button>
+		<button class="button" onclick="getHint()">Hint</button>
 		<button class="button" onclick="checkSolution()">Check Solution</button>
 	</div>
 
@@ -312,6 +313,56 @@
                 statusElement.textContent = 'Failed to check solution';
             });
         }
+		async function getHint(specificRow = null, specificCol = null) {
+			if (sessionId === null) {
+				statusElement.textContent = 'Please start a new puzzle first';
+				return;
+			}
+
+			try {
+				const response = await fetch(`${API_URL}/get_hint`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ 
+						session_id: sessionId,
+						row: specificRow,
+						col: specificCol
+					})
+				});
+				const data = await response.json();
+				
+				if (data.success) {
+					// Determine which row and column to use
+					const hintRow = specificRow !== null ? specificRow : data.hint_row;
+					const hintCol = specificCol !== null ? specificCol : data.hint_col;
+					
+					// Find the cell
+					const cell = gridElement.querySelector(`[data-row="${hintRow}"][data-col="${hintCol}"]`);
+					
+					if (cell && !cell.classList.contains('initial')) {
+						cell.value = data.hint_value;
+						
+						// Temporarily highlight the hinted cell
+						cell.style.backgroundColor = '#FFFF00'; // Yellow highlight
+						setTimeout(() => {
+							cell.style.backgroundColor = ''; // Remove highlight after 2 seconds
+						}, 2000);
+					}
+					
+					// Make the move through the server
+					makeMove(hintRow, hintCol, data.hint_value);
+					
+					statusElement.textContent = 
+						`Hint: Cell (${hintRow}, ${hintCol}) set to ${data.hint_value}`;
+				}
+			} catch (error) {
+				console.error('Error getting hint:', error);
+				statusElement.textContent = 'Failed to get hint';
+			}
+		}
+
     </script>
 </body>
 </html>

@@ -33,10 +33,26 @@ def start_puzzle():
     difficulty = data.get('difficulty', 'Easy')
     puzzle_size = data.get('puzzle_size', 9)
 
+    # Query to match the puzzle size
+    query = {"size": puzzle_size}
+
+    print(f"Running aggregation with query: {query}")
+    
     # Fetch a random puzzle from the selected difficulty
-    puzzle_doc = puzzles_collections[difficulty].aggregate([
+    puzzle_cursor = puzzles_collections[difficulty].aggregate([
+        {"$match": query},
         {'$sample': {'size': 1}}
-    ]).next()
+    ])
+
+    # Debug: Print what is returned by the aggregation
+    puzzle_list = list(puzzle_cursor)
+    print(f"Found puzzles: {puzzle_list}")
+
+    # Check if no documents were returned
+    if not puzzle_list:
+        return jsonify({'error': 'No puzzle found for the given difficulty and size'}), 404
+
+    puzzle_doc = puzzle_list[0]
 
     # Check if 'puzzle' exists in the puzzle document
     if 'puzzle' not in puzzle_doc:
@@ -67,6 +83,7 @@ def start_puzzle():
         'board_id': board_id,
         'initial_grid': puzzle_doc['puzzle']
     }), 200
+
 
 @app.route('/load_board', methods=['POST'])
 def load_board():
