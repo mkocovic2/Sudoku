@@ -106,59 +106,6 @@ def load_board():
         'current_grid_state': session['current_grid_state']
     }), 200
 
-
-@app.route('/make_move', methods=['POST'])
-def make_move():
-    """
-    Process a user's move in the Sudoku puzzle
-    Request body should contain:
-    - session_id
-    - row
-    - col
-    - value
-    """
-    data = request.json
-    session_id = ObjectId(data['session_id'])
-    row = data['row']
-    col = data['col']
-    value = data['value']
-
-    # Retrieve user session
-    session = user_sessions_collection.find_one({'_id': session_id})
-    if not session:
-        return jsonify({'error': 'Session not found'}), 404
-
-    # Update grid state and history
-    current_grid = session['current_grid_state']
-    
-    # Store previous value for undo functionality
-    previous_value = current_grid[row][col]
-    current_grid[row][col] = value
-
-    # Push to history stack
-    history_entry = {
-        'action': f'Set cell ({row}, {col}) to {value}',
-        'cell_details': {
-            'row': row,
-            'col': col,
-            'previous_value': previous_value,
-            'new_value': value
-        }
-    }
-
-    user_sessions_collection.update_one(
-        {'_id': session_id},
-        {
-            '$set': {
-                'current_grid_state': current_grid,
-                'last_updated': datetime.utcnow()
-            },
-            '$push': {'history_stack': history_entry}
-        }
-    )
-
-    return jsonify({'success': True, 'updated_grid': current_grid}), 200
-
 @app.route('/undo_move', methods=['POST'])
 def undo_move():
     """
@@ -380,15 +327,23 @@ def get_hint():
         'updated_grid': current_grid
     }), 200
 
-@app.route('/check_cell_correctness', methods=['POST'])
-def check_cell_correctness():
+@app.route('/process_move', methods=['POST'])
+def process_move():
+    """
+    Process a user's move in the Sudoku puzzle and check its correctness
+    Request body should contain:
+    - session_id
+    - row
+    - col
+    - value
+    """
     data = request.json
     session_id = ObjectId(data['session_id'])
     row = data['row']
     col = data['col']
     value = data['value']
 
-    # Retrieve user session and puzzle
+    # Retrieve user session
     session = user_sessions_collection.find_one({'_id': session_id})
     if not session:
         return jsonify({'error': 'Session not found'}), 404
@@ -400,9 +355,41 @@ def check_cell_correctness():
     # Check if the entered value matches the solution
     is_correct = (solution[row][col] == value)
 
+    # Update grid state and history
+    current_grid = session['current_grid_state']
+    
+    # Store previous value for undo functionality
+    previous_value = current_grid[row][col]
+    current_grid[row][col] = value
+
+    # Create history entry
+    history_entry = {
+        'action': f'Set cell ({row}, {col}) to {value}',
+        'cell_details': {
+            'row': row,
+            'col': col,
+            'previous_value': previous_value,
+            'new_value': value
+        }
+    }
+
+    # Update user session
+    user_sessions_collection.update_one(
+        {'_id': session_id},
+        {
+            '$set': {
+                'current_grid_state': current_grid,
+                'last_updated': datetime.utcnow()
+            },
+            '$push': {'history_stack': history_entry}
+        }
+    )
+
     return jsonify({
+        'success': True, 
         'is_correct': is_correct,
-        'correct_value': solution[row][col]
+        'correct_value': solution[row][col],
+        'updated_grid': current_grid
     }), 200
 
 if __name__ == '__main__':

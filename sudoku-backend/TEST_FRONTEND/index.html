@@ -1,419 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Sudoku Puzzle</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-        }
-        #sudoku-grid {
-            display: grid;
-            grid-template-columns: repeat(9, 50px);
-            grid-gap: 1px;
-            margin: 20px auto;
-            justify-content: center;
-        }
-        .sudoku-cell {
-            width: 50px;
-            height: 50px;
-            border: 1px solid #333;
-            text-align: center;
-            font-size: 20px;
-            background-color: white;
-            outline: none;
-        }
-        .sudoku-cell.initial {
-            background-color: #f0f0f0;
-            font-weight: bold;
-            color: #666;
-        }
-        .sudoku-cell.incorrect {
-            background-color: #ffcccc;
-        }
-        .sudoku-cell:hover {
-            background-color: #e0e0e0;
-        }
-        #controls {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .button {
-            margin: 0 10px 10px;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-        #status {
-            margin: 10px 0;
-            font-weight: bold;
-            min-height: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Sudoku Puzzle</h1>
-    <div id="controls">
-		<label for="boardSize">Select Board Size:</label>
-		<select id="boardSize">
-			<option value="9">9x9</option>
-			<option value="4">4x4</option>
-		</select>
-		<br><br>
-		
-		<button class="button" onclick="startNewPuzzle('Easy')">New Easy Puzzle</button>
-		<button class="button" onclick="startNewPuzzle('Medium')">New Medium Puzzle</button>
-		<button class="button" onclick="startNewPuzzle('Hard')">New Hard Puzzle</button>
-		<button class="button" onclick="loadBoard()">Load Board</button>
-		<br>
-		<button class="button" onclick="undoMove()">Undo</button>
-		<button class="button" onclick="undoUntilCorrect()">Undo Until Correct</button>
-		<button class="button" onclick="getHint()">Hint</button>
-		<button class="button" onclick="checkSolution()">Check Solution</button>
-	</div>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Sudoku Puzzle</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                text-align: center;
+            }
+            #sudoku-grid {
+                display: grid;
+                grid-template-columns: repeat(9, 50px);
+                grid-gap: 1px;
+                margin: 20px auto;
+                justify-content: center;
+            }
+            .sudoku-cell {
+                width: 50px;
+                height: 50px;
+                border: 1px solid #333;
+                text-align: center;
+                font-size: 20px;
+                background-color: white;
+                outline: none;
+            }
+            .sudoku-cell.initial {
+                background-color: #f0f0f0;
+                font-weight: bold;
+                color: #666;
+            }
+            .sudoku-cell.incorrect {
+                background-color: #ffcccc;
+            }
+            .sudoku-cell:hover {
+                background-color: #e0e0e0;
+            }
+            #controls {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .button {
+                margin: 0 10px 10px;
+                padding: 10px;
+                background-color: #4caf50;
+                color: white;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            .button:hover {
+                background-color: #45a049;
+            }
+            #status {
+                margin: 10px 0;
+                font-weight: bold;
+                min-height: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Sudoku Puzzle</h1>
+        <div id="controls">
+            <label for="boardSize">Select Board Size:</label>
+            <select id="boardSize">
+                <option value="9">9x9</option>
+                <option value="4">4x4</option>
+            </select>
+            <br /><br />
 
-    <div id="sudoku-grid"></div>
-    <div id="status"></div>
+            <button class="button" onclick="startNewPuzzle('Easy')">
+                New Easy Puzzle
+            </button>
+            <button class="button" onclick="startNewPuzzle('Medium')">
+                New Medium Puzzle
+            </button>
+            <button class="button" onclick="startNewPuzzle('Hard')">
+                New Hard Puzzle
+            </button>
+            <button class="button" onclick="loadBoard()">Load Board</button>
+            <br />
+            <button class="button" onclick="undoMove()">Undo</button>
+            <button class="button" onclick="undoUntilCorrect()">
+                Undo Until Correct
+            </button>
+            <button class="button" onclick="getHint()">Hint</button>
+            <button class="button" onclick="checkSolution()">
+                Check Solution
+            </button>
+        </div>
 
-    <script>
-        let sessionId = null;
-        let boardId = null;
-        const gridElement = document.getElementById('sudoku-grid');
-        const statusElement = document.getElementById('status');
-        const API_URL = 'http://exodus.viewdns.net:4655';
+        <div id="sudoku-grid"></div>
+        <div id="status"></div>
 
-        function startNewPuzzle(difficulty) {
-			const puzzle_size = +document.getElementById('boardSize').value;			
-			
-			fetch(`${API_URL}/start_puzzle`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ 
-					difficulty,
-					puzzle_size,
-					user_id: generateUserId() 
-				})
-			})
-			.then(response => response.json())
-			.then(data => {
-				sessionId = data.session_id;
-				boardId = data.board_id;
-				renderGrid(data.initial_grid);
-				statusElement.textContent = `New ${difficulty} puzzle started. Board ID: ${boardId}`;
-			})
-			.catch(error => {
-				console.error('Error starting puzzle:', error);
-				statusElement.textContent = 'Failed to start puzzle';
-			});
-		}
+        <script>
+            let sessionId = null;
+            let boardId = null;
+            const gridElement = document.getElementById("sudoku-grid");
+            const statusElement = document.getElementById("status");
+            const API_URL = "http://exodus.viewdns.net:4655";
 
-        function renderGrid(initialGrid) {
-			const puzzle_size = +document.getElementById('boardSize').value;
+            function startNewPuzzle(difficulty) {
+                const puzzle_size = +document.getElementById("boardSize").value;
 
-			gridElement.innerHTML = '';
-			gridElement.style.gridTemplateColumns = `repeat(${puzzle_size}, 50px)`; 
-
-			for (let row = 0; row < puzzle_size; row++) {
-				for (let col = 0; col < puzzle_size; col++) {
-					const cell = document.createElement('input');
-					cell.type = 'text';
-					cell.className = 'sudoku-cell';
-					cell.maxLength = 1;
-					cell.dataset.row = row;
-					cell.dataset.col = col;
-
-					if (initialGrid[row] && initialGrid[row][col] !== null && initialGrid[row][col] !== 0) {
-						cell.value = initialGrid[row][col];
-						cell.disabled = true;
-						cell.classList.add('initial');
-					} else {
-						cell.value = ''; 
-					}
-
-					// Modified event listener to include correctness check
-					cell.addEventListener('input', function() {
-						this.value = this.value.replace(/[^1-9]/g, ''); // Only allow numeric input
-						const value = this.value === '' ? null : parseInt(this.value);
-						
-						// First make the move
-						makeMove(row, col, value);
-						
-						// Then check cell correctness if a value is entered
-						if (value !== null) {
-							checkCellCorrectness(row, col, value);
-						}
-					});
-
-					gridElement.appendChild(cell);
-				}
-			}
-		}
-		
-		function checkCellCorrectness(row, col, value) {
-            if (sessionId === null) {
-                statusElement.textContent = 'Please start a new puzzle first';
-                return;
+                fetch(`${API_URL}/start_puzzle`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        difficulty,
+                        puzzle_size,
+                        user_id: generateUserId(),
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        sessionId = data.session_id;
+                        boardId = data.board_id;
+                        renderGrid(data.initial_grid);
+                        statusElement.textContent = `New ${difficulty} puzzle started. Board ID: ${boardId}`;
+                    })
+                    .catch((error) => {
+                        console.error("Error starting puzzle:", error);
+                        statusElement.textContent = "Failed to start puzzle";
+                    });
             }
 
-            fetch(`${API_URL}/check_cell_correctness`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    row,
-                    col,
-                    value
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const cell = gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-                
-                if (cell && !cell.classList.contains('initial')) {
-                    if (!data.is_correct) {
-                        // Mark cell as incorrect
-                        cell.classList.add('incorrect');
-                        
-                        // Optional: Show detailed error message
-                        statusElement.textContent = 
-                            `Incorrect value for cell (${row}, ${col}). Correct value is ${data.correct_value}`;
-                    } else {
-                        // Remove incorrect class if previously added
-                        cell.classList.remove('incorrect');
-                        statusElement.textContent = ''; // Clear status
+            function renderGrid(initialGrid) {
+                const puzzle_size = +document.getElementById("boardSize").value;
+
+                gridElement.innerHTML = "";
+                gridElement.style.gridTemplateColumns = `repeat(${puzzle_size}, 50px)`;
+
+                for (let row = 0; row < puzzle_size; row++) {
+                    for (let col = 0; col < puzzle_size; col++) {
+                        const cell = document.createElement("input");
+                        cell.type = "text";
+                        cell.className = "sudoku-cell";
+                        cell.maxLength = 1;
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+
+                        if (
+                            initialGrid[row] &&
+                            initialGrid[row][col] !== null &&
+                            initialGrid[row][col] !== 0
+                        ) {
+                            cell.value = initialGrid[row][col];
+                            cell.disabled = true;
+                            cell.classList.add("initial");
+                        } else {
+                            cell.value = "";
+                        }
+
+                        // Modified event listener to use process_move
+                        cell.addEventListener("input", function () {
+                            this.value = this.value.replace(/[^1-9]/g, ""); // Only allow numeric input
+                            const value =
+                                this.value === "" ? null : parseInt(this.value);
+
+                            // Use the new combined process_move endpoint
+                            processMove(row, col, value);
+                        });
+
+                        gridElement.appendChild(cell);
                     }
                 }
-            })
-            .catch(error => {
-                console.error('Error checking cell correctness:', error);
-                statusElement.textContent = 'Failed to check cell correctness';
-            });
-        }
-		
-        function generateUserId() {
-            return Math.random().toString(36).substr(2, 9);
-        }
-
-        function loadBoard() {
-            const boardIdInput = prompt('Enter Board ID:');
-            if (!boardIdInput) return;
-
-            fetch(`${API_URL}/load_board`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ board_id: boardIdInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                sessionId = data.session_id;
-                boardId = data.board_id;
-                renderGrid(data.current_grid_state);
-                statusElement.textContent = `Loaded ${data.difficulty} puzzle. Board ID: ${boardId}`;
-            })
-            .catch(error => {
-                console.error('Error loading board:', error);
-                statusElement.textContent = 'Failed to load board';
-            });
-        }
-
-        function makeMove(row, col, value) {
-			if (sessionId === null) {
-				statusElement.textContent = 'Please start a new puzzle first';
-				return;
-			}
-
-			fetch(`${API_URL}/make_move`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					session_id: sessionId,
-					row,
-					col,
-					value
-				})
-			})
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					// Update the grid to reflect the move
-					const cell = gridElement.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-					if (cell && !cell.classList.contains('initial')) {
-						// Set to empty string if value is null
-						cell.value = value || '';
-					}
-					statusElement.textContent = value 
-						? `Moved: (${row}, ${col}) = ${value}` 
-						: `Cleared cell (${row}, ${col})`;
-				}
-			})
-			.catch(error => {
-				console.error('Error making move:', error);
-				statusElement.textContent = 'Failed to make move';
-			});
-		}
-
-        function undoMove() {
-            if (sessionId === null) {
-                statusElement.textContent = 'Please start a new puzzle first';
-                return;
             }
 
-            fetch(`${API_URL}/undo_move`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ session_id: sessionId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update grid with previous state
-                    data.updated_grid.forEach((row, rowIndex) => {
-                        row.forEach((value, colIndex) => {
-                            const cell = gridElement.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
-                            if (cell && !cell.classList.contains('initial')) {
-                                cell.value = value || '';
-                            }
-                        });
+            function generateUserId() {
+                return Math.random().toString(36).substr(2, 9);
+            }
+
+            function loadBoard() {
+                const boardIdInput = prompt("Enter Board ID:");
+                if (!boardIdInput) return;
+
+                fetch(`${API_URL}/load_board`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ board_id: boardIdInput }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        sessionId = data.session_id;
+                        boardId = data.board_id;
+                        renderGrid(data.current_grid_state);
+                        statusElement.textContent = `Loaded ${data.difficulty} puzzle. Board ID: ${boardId}`;
+                    })
+                    .catch((error) => {
+                        console.error("Error loading board:", error);
+                        statusElement.textContent = "Failed to load board";
                     });
-                    statusElement.textContent = 'Last move undone';
-                }
-            })
-            .catch(error => {
-                console.error('Error undoing move:', error);
-                statusElement.textContent = 'Failed to undo move';
-            });
-        }
-
-        function undoUntilCorrect() {
-            if (sessionId === null) {
-                statusElement.textContent = 'Please start a new puzzle first';
-                return;
             }
 
-            fetch(`${API_URL}/undo_until_correct`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ session_id: sessionId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update entire grid
-                    data.updated_grid.forEach((row, rowIndex) => {
-                        row.forEach((value, colIndex) => {
-                            const cell = gridElement.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
-                            if (cell && !cell.classList.contains('initial')) {
-                                cell.value = value || '';
+            function processMove(row, col, value) {
+                if (sessionId === null) {
+                    statusElement.textContent =
+                        "Please start a new puzzle first";
+                    return;
+                }
+
+                fetch(`${API_URL}/process_move`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        row,
+                        col,
+                        value,
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            // Update the grid to reflect the move
+                            const cell = gridElement.querySelector(
+                                `[data-row="${row}"][data-col="${col}"]`
+                            );
+                            if (cell && !cell.classList.contains("initial")) {
+                                // Set to empty string if value is null
+                                cell.value = value || "";
+
+                                // Handle cell correctness
+                                if (value !== null) {
+                                    if (!data.is_correct) {
+                                        cell.classList.add("incorrect");
+                                        statusElement.textContent = `Incorrect value for cell (${row}, ${col}). Correct value is ${data.correct_value}`;
+                                    } else {
+                                        cell.classList.remove("incorrect");
+                                        statusElement.textContent = value
+                                            ? `Moved: (${row}, ${col}) = ${value}`
+                                            : `Cleared cell (${row}, ${col})`;
+                                    }
+                                }
                             }
-                        });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error processing move:", error);
+                        statusElement.textContent = "Failed to process move";
                     });
-                    statusElement.textContent = 'Undone to last correct configuration';
-                }
-            })
-            .catch(error => {
-                console.error('Error undoing until correct:', error);
-                statusElement.textContent = 'Failed to undo until correct';
-            });
-        }
-
-        function checkSolution() {
-            if (sessionId === null) {
-                statusElement.textContent = 'Please start a new puzzle first';
-                return;
             }
 
-            fetch(`${API_URL}/check_solution`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ session_id: sessionId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.is_solved) {
-                    statusElement.textContent = `Congratulations! Puzzle solved in ${data.time_taken.toFixed(2)} seconds`;
-                } else {
-                    statusElement.textContent = 'Puzzle is not yet solved. Keep trying!';
+            function undoMove() {
+                if (sessionId === null) {
+                    statusElement.textContent =
+                        "Please start a new puzzle first";
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error checking solution:', error);
-                statusElement.textContent = 'Failed to check solution';
-            });
-        }
-		async function getHint(specificRow = null, specificCol = null) {
-			if (sessionId === null) {
-				statusElement.textContent = 'Please start a new puzzle first';
-				return;
-			}
 
-			try {
-				const response = await fetch(`${API_URL}/get_hint`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ 
-						session_id: sessionId,
-						row: specificRow,
-						col: specificCol
-					})
-				});
-				const data = await response.json();
-				
-				if (data.success) {
-					// Determine which row and column to use
-					const hintRow = specificRow !== null ? specificRow : data.hint_row;
-					const hintCol = specificCol !== null ? specificCol : data.hint_col;
-					
-					// Find the cell
-					const cell = gridElement.querySelector(`[data-row="${hintRow}"][data-col="${hintCol}"]`);
-					
-					if (cell && !cell.classList.contains('initial')) {
-						cell.value = data.hint_value;
-						
-						// Temporarily highlight the hinted cell
-						cell.style.backgroundColor = '#FFFF00'; // Yellow highlight
-						setTimeout(() => {
-							cell.style.backgroundColor = ''; // Remove highlight after 2 seconds
-						}, 2000);
-					}
-					
-					// Make the move through the server
-					makeMove(hintRow, hintCol, data.hint_value);
-					
-					statusElement.textContent = 
-						`Hint: Cell (${hintRow}, ${hintCol}) set to ${data.hint_value}`;
-				}
-			} catch (error) {
-				console.error('Error getting hint:', error);
-				statusElement.textContent = 'Failed to get hint';
-			}
-		}
+                fetch(`${API_URL}/undo_move`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ session_id: sessionId }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            // Update grid with previous state
+                            data.updated_grid.forEach((row, rowIndex) => {
+                                row.forEach((value, colIndex) => {
+                                    const cell = gridElement.querySelector(
+                                        `[data-row="${rowIndex}"][data-col="${colIndex}"]`
+                                    );
+                                    if (
+                                        cell &&
+                                        !cell.classList.contains("initial")
+                                    ) {
+                                        cell.value = value || "";
+                                        cell.classList.remove("incorrect");
+                                    }
+                                });
+                            });
+                            statusElement.textContent = "Last move undone";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error undoing move:", error);
+                        statusElement.textContent = "Failed to undo move";
+                    });
+            }
 
-    </script>
-</body>
+            function undoUntilCorrect() {
+                if (sessionId === null) {
+                    statusElement.textContent =
+                        "Please start a new puzzle first";
+                    return;
+                }
+
+                fetch(`${API_URL}/undo_until_correct`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ session_id: sessionId }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            // Update entire grid
+                            data.updated_grid.forEach((row, rowIndex) => {
+                                row.forEach((value, colIndex) => {
+                                    const cell = gridElement.querySelector(
+                                        `[data-row="${rowIndex}"][data-col="${colIndex}"]`
+                                    );
+                                    if (
+                                        cell &&
+                                        !cell.classList.contains("initial")
+                                    ) {
+                                        cell.value = value || "";
+                                        cell.classList.remove("incorrect");
+                                    }
+                                });
+                            });
+                            statusElement.textContent =
+                                "Undone to last correct configuration";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error undoing until correct:", error);
+                        statusElement.textContent =
+                            "Failed to undo until correct";
+                    });
+            }
+
+            function checkSolution() {
+                if (sessionId === null) {
+                    statusElement.textContent =
+                        "Please start a new puzzle first";
+                    return;
+                }
+
+                fetch(`${API_URL}/check_solution`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ session_id: sessionId }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.is_solved) {
+                            statusElement.textContent = `Congratulations! Puzzle solved in ${data.time_taken.toFixed(
+                                2
+                            )} seconds`;
+                        } else {
+                            statusElement.textContent =
+                                "Puzzle is not yet solved. Keep trying!";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error checking solution:", error);
+                        statusElement.textContent = "Failed to check solution";
+                    });
+            }
+
+            async function getHint(specificRow = null, specificCol = null) {
+                if (sessionId === null) {
+                    statusElement.textContent =
+                        "Please start a new puzzle first";
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/get_hint`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            session_id: sessionId,
+                            selected_cell:
+                                specificRow !== null && specificCol !== null
+                                    ? { row: specificRow, col: specificCol }
+                                    : null,
+                        }),
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Determine which row and column to use
+                        const hintRow =
+                            specificRow !== null ? specificRow : data.hint_row;
+                        const hintCol =
+                            specificCol !== null ? specificCol : data.hint_col;
+
+                        // Find the cell
+                        const cell = gridElement.querySelector(
+                            `[data-row="${hintRow}"][data-col="${hintCol}"]`
+                        );
+
+                        if (cell && !cell.classList.contains("initial")) {
+                            cell.value = data.hint_value;
+
+                            // Temporarily highlight the hinted cell
+                            cell.style.backgroundColor = "#FFFF00"; // Yellow highlight
+                            setTimeout(() => {
+                                cell.style.backgroundColor = ""; // Remove highlight after 2 seconds
+                            }, 2000);
+                        }
+
+                        // Use process_move to handle the hint
+                        processMove(hintRow, hintCol, data.hint_value);
+
+                        statusElement.textContent = `Hint: Cell (${hintRow}, ${hintCol}) set to ${data.hint_value}`;
+                    }
+                } catch (error) {
+                    console.error("Error getting hint:", error);
+                    statusElement.textContent = "Failed to get hint";
+                }
+            }
+        </script>
+    </body>
 </html>
