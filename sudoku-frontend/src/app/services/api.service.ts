@@ -19,7 +19,7 @@ export class ApiService {
   }
 
   makeMove(data:any) {
-    const path = `${environment.baseUrl}/make_move`;
+    const path = `${environment.baseUrl}/process_move`;
     return this.http.post(path, data)
   }
 

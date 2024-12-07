@@ -41,9 +41,13 @@
             </div>
         </div>
         <div class="actions" [ngClass]="{'disabled': isTimePaused}">
-            <button (click)="setAction('UNDO')">
+            <button (click)="setAction('UNDO LAST')">
                 <i class="fa-solid fa-rotate-left"></i>
-                <div class="name">Undo</div>
+                <div class="name">Undo Last</div>
+            </button>
+            <button (click)="setAction('UNDO ALL')">
+                <i class="fa-solid fa-rotate-left"></i>
+                <div class="name">Undo All</div>
             </button>
             <button (click)="setAction('CHECK')">
                 <i class="fa-solid fa-gear"></i>

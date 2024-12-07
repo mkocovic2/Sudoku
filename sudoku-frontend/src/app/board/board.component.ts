@@ -96,7 +96,15 @@ export class BoardComponent implements OnInit {
     this.clickedBoxPosition = [row, col]
   }
 
-  undo() {
+  undoAll() {
+    this.apiService.undoUntilCorrect({session_id: this.session_id}).subscribe({
+      next: (res: any) => {
+        if (res?.success) this.board = res?.updated_grid
+      }
+    })
+  }
+
+  undoLast() {
     this.apiService.undoMove({session_id: this.session_id}).subscribe({
       next: (res: any) => {
         if (res?.success) this.board = res?.updated_grid
@@ -126,10 +134,12 @@ export class BoardComponent implements OnInit {
 
   setAction(action: string) {
     this.action = action
-    if (action == 'UNDO') {
-      this.undo()
+    if (action == 'UNDO LAST') {
+      this.undoLast()
     }
-
+    if (action == 'UNDO ALL') {
+      this.undoAll()
+    }
     if (action == 'CHECK') {
     }
     if (action == 'HINT') {
