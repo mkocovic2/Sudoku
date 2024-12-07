@@ -6,18 +6,22 @@ import { LevelComponent } from './level/level.component';
 import { BoardComponent } from './board/board.component';
 import { CdTimerModule } from 'angular-cd-timer';
 import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { CongradulationComponent } from './congradulation/congradulation.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     LevelComponent,
     BoardComponent,
+    CongradulationComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     CdTimerModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -1,5 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { take } from 'rxjs';
 import { ApiService } from '../services/api.service';
 
@@ -11,13 +11,15 @@ import { ApiService } from '../services/api.service';
 export class BoardComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private router: Router, 
   ){}
 
   Math = Math
   boxes: any[] = []
   board: number[][] = [];
-  puzzleSolution: number[][] = Array.from({length: 9}, () => Array(9).fill(0))
+  puzzleSolution: number[][] = []
+  preDefined: number[][] = []
   clickedBoxPosition: number[] = [-1, -1]
   noteMode: boolean = false
   action: string = ''
@@ -37,6 +39,8 @@ export class BoardComponent implements OnInit {
       this.size = params['size'] || null;
       this.boxes = Array.from({ length: this.size }).fill(0)
       this.board = Array.from({ length: this.size }, () => Array(this.size).fill(0))
+      this.puzzleSolution = Array.from({ length: this.size }, () => Array(this.size).fill(0))
+      this.preDefined = Array.from({ length: this.size }, () => Array(this.size).fill(0))
       this.noteBoxes = Array.from({ length: this.Math.sqrt(this.size) }).fill(0)
       this.noteBoard = Array.from({ length: this.size }, () => 
         Array.from({ length: this.size }, () => 
@@ -49,11 +53,28 @@ export class BoardComponent implements OnInit {
     this.apiService.boardObs.subscribe({
       next: (res) => {
         if (Object.keys(res).length > 0) {
-          this.board = res?.board
+          this.board = JSON.parse(JSON.stringify(res?.board))
+          this.puzzleSolution = JSON.parse(JSON.stringify(res?.board))
+          this.preDefined = JSON.parse(JSON.stringify(res?.board))
           this.session_id = res?.session_id
         }
       }
     }) 
+  }
+
+  makeMove(x:number, y:number, value:number) {
+    const move = {
+      session_id: this.session_id,
+      row: x,
+      col: y,
+      value: value + 1
+    }
+    this.apiService.makeMove(move).subscribe({
+      next: (res: any) => {
+        const {correct_value} = res
+        this.puzzleSolution[x][y] = correct_value
+      }
+    })
   }
 
   setCell(value: number) {
@@ -63,6 +84,7 @@ export class BoardComponent implements OnInit {
     if (x == -1 || y == -1) return
 
     if (this.noteMode) {
+      //take note
       const n = Math.floor(value/Math.sqrt(this.size))
       const m = value%Math.sqrt(this.size)
       if (this.board[x][y] == 0 || this.board[x][y] == null) {
@@ -74,17 +96,12 @@ export class BoardComponent implements OnInit {
       }
     }
     else {
-      if (this.board[x][y] == 0 || this.board[x][y] == null) {
+      //set cell value
+      if (this.preDefined[x][y] == 0 || this.preDefined[x][y] == null) {
         this.board[x][y] = value + 1
       }
     this.setPosition(-1,-1)
-      const move = {
-					session_id: this.session_id,
-					row: x,
-					col: y,
-					value: value + 1
-      }
-      this.apiService.makeMove(move).subscribe()
+    this.makeMove(x, y, value)  
     } 
   }
 
@@ -110,6 +127,30 @@ export class BoardComponent implements OnInit {
         if (res?.success) this.board = res?.updated_grid
       }
     })
+  }
+
+  isCompeleted():boolean {
+    for(let i=0; i<this.size; i++){
+      for(let j=0; j<this.size; j++){
+        if (this.board[i][j] == 0 || this.board[i][j] == null) return false
+      }
+    }
+    return true
+  }
+
+  check() {
+    const isCompeleted: boolean = this.isCompeleted()
+    if (isCompeleted) {
+      this.apiService.checkSolution({session_id: this.session_id}).subscribe({
+        next: (res: any) => {
+          if (res?.is_solved) {
+            this.router.navigate(['/congradulation'])
+          } else {
+            console.log('Try Again!!!')
+          }
+        }
+      })
+    }
   }
 
   hint(row: number, col: number) {
@@ -141,6 +182,7 @@ export class BoardComponent implements OnInit {
       this.undoAll()
     }
     if (action == 'CHECK') {
+      this.check()
     }
     if (action == 'HINT') {
       const [row, col] = this.clickedBoxPosition

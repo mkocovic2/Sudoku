@@ -20,5 +20,9 @@
             </div>
         </div>
         <button class="app-btn" [ngClass]="{'selected': size != 0 && difficulty != ''}" [disabled]="difficulty == '' || size == 0" (click)="startPuzzle()">New Game</button>
+        
+        <div class="or">or</div>
+        <input [(ngModel)]="boardId" type="text" placeholder="Enter Board Id">
+        <button class="app-btn" [ngClass]="{'selected': boardId != ''}" (click)="loadBoard()">Load Board</button>
     </div>
 </div>

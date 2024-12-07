@@ -99,6 +99,9 @@
             .hint {
                 background: yellow;
             }
+            .pre-defined {
+                color: rgb(70, 70, 198);
+            }
             .selected {
                 background: rgb(218, 218, 224);
             }
@@ -177,11 +180,18 @@
                 }
             }
         }
+
         .note {
             .note-mode {
                 background: $tertiary-color !important;
                 color: white;
             }
+        }
+        .action {
+            i, .name {
+                color: blue;
+            }
+
         }
     }
     .disabled {

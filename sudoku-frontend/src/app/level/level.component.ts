@@ -17,6 +17,7 @@ export class LevelComponent {
 
   difficulty: string = ''
   size: number = 0
+  boardId: string = ''
 
   startPuzzle() {
       const game = { 
@@ -34,6 +35,19 @@ export class LevelComponent {
           }
         }
       })
+  }
+
+  loadBoard() {
+    this.apiService.loadBoard({board_id: this.boardId}).subscribe({
+      next: (res: any) => {
+        {
+          this.apiService.updateBoard({board: res?.current_grid_state, session_id: res?.session_id})
+          this.router.navigate(['/board'], {
+            queryParams: {difficulty: res?.difficulty, size: res?.size}
+          })
+      }
+      }
+    })
   }
 
   generateUserId() {
