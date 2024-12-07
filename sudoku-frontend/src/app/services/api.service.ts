@@ -38,6 +38,11 @@ export class ApiService {
     return this.http.post(path, data)
   }
 
+  getHint(data: any) {
+    const path = `${environment.baseUrl}/get_hint`;
+    return this.http.post(path, data)
+  }
+
   loadBoard(data: any) {
     const path = `${environment.baseUrl}/load_board`;
     return this.http.post(path, data)

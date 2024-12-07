@@ -1,8 +1,24 @@
 <div class="container">
-    <div class="name">Sudoku</div>
-    <div class="levels">
-        <div class="app-btn" (click)="startPuzzle('Easy')" routerLink="/board">Easy</div>
-        <div class="app-btn" (click)="startPuzzle('Medium')" routerLink="/board">Medium</div>
-        <div class="app-btn" (click)="startPuzzle('Hard')" routerLink="/board">Hard</div>
+    <div class="sub-section">
+        <div class="name">Sudoku</div>
+        <div class="middle">
+            <div>
+                <div class="title">Difficulty</div>
+                <div class="levels">
+                    <div class="app-btn" [ngClass]="{'selected': difficulty == 'Easy'}" (click)="selectDifficulty('Easy')" >Easy</div>
+                    <div class="app-btn" [ngClass]="{'selected': difficulty == 'Medium'}" (click)="selectDifficulty('Medium')" >Medium</div>
+                    <div class="app-btn" [ngClass]="{'selected': difficulty == 'Hard'}" (click)="selectDifficulty('Hard')" >Hard</div>
+                </div>
+            </div>
+            <div>
+                <div class="title">Puzzle Size</div>
+                <div class="levels">
+                    <div class="app-btn" [ngClass]="{'selected': size == 4}" (click)="selectSize(4)" >4 x 4</div>
+                    <div class="app-btn" [ngClass]="{'selected': size == 9}" (click)="selectSize(9)" >9 x 9</div>
+                    <div class="app-btn" [ngClass]="{'selected': size == 16}" (click)="selectSize(16)" >16 x 16</div>
+                </div>
+            </div>
+        </div>
+        <button class="app-btn" [ngClass]="{'selected': size != 0 && difficulty != ''}" [disabled]="difficulty == '' || size == 0" (click)="startPuzzle()">New Game</button>
     </div>
 </div>
