@@ -28,7 +28,7 @@
                 <div class="col" (click)="setPosition(i, j)" *ngFor="let box of boxes; let j = index" 
                 [ngClass]="{'br-l': j == 0, 'br-r': j%Math.sqrt(size) == Math.sqrt(size) - 1, 'br-t': i == 0, 'br-b': i%Math.sqrt(size) == Math.sqrt(size) - 1,
                             'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': checkPuzzle(i,j) == true, 
-                            'hint': hintRow == i && hintCol == j && hintRow >= 0}">                
+                            'hint': hintRow == i && hintCol == j && hintRow >= 0, 'pre-defined': preDefined[i][j] != 0 || preDefined[i][j] != null}">                
                     {{board[i][j] > 0 && !isTimePaused ? board[i][j] : ''}}
                     <div class="note-container" *ngIf="noteMode || clearNote(i, j)">
                         <div class="note-row" *ngFor="let noteBox of noteBoxes; let n = index">
@@ -41,26 +41,26 @@
             </div>
         </div>
         <div class="actions" [ngClass]="{'disabled': isTimePaused}">
-            <button (click)="setAction('UNDO LAST')">
-                <i class="fa-solid fa-rotate-left"></i>
+            <button [ngClass]="{'action': action == 'UNDO LAST'}" >
+                <i class="fa-solid fa-rotate-left" (click)="setAction('UNDO LAST')"></i>
                 <div class="name">Undo Last</div>
             </button>
-            <button (click)="setAction('UNDO ALL')">
-                <i class="fa-solid fa-rotate-left"></i>
+            <button [ngClass]="{'action': action == 'UNDO ALL'}" >
+                <i class="fa-solid fa-rotate-left" (click)="setAction('UNDO ALL')"></i>
                 <div class="name">Undo All</div>
             </button>
-            <button (click)="setAction('CHECK')">
-                <i class="fa-solid fa-gear"></i>
+            <button [ngClass]="{'action': action == 'CHECK'}" >
+                <i class="fa-solid fa-gear" (click)="setAction('CHECK')"></i>
                 <div class="name">Check</div>
             </button>
-            <button (click)="setAction('HINT')">
-                <i class="fa-regular fa-lightbulb"></i>
+            <button [ngClass]="{'action': action == 'HINT'}" >
+                <i class="fa-regular fa-lightbulb" (click)="setAction('HINT')"></i>
                 <div class="name">Hint</div>
             </button>
-            <button (click)="setAction('NOTE')" [ngClass]="{'note': noteMode}">
-                <i class="fa-regular fa-note-sticky"></i>
-                <div class="name">Note</div>
-                <div class="note-mode">{{noteMode ? 'ON' : 'OFF'}}</div>
+            <button [ngClass]="{'action': action == 'NOTE'}"  [ngClass]="{'note': noteMode}">
+                <i class="fa-regular fa-note-sticky" (click)="setAction('NOTE')"></i>
+                <div class="name" >Note</div>
+                <div class="note-mode" (click)="setAction('NOTE')">{{noteMode ? 'ON' : 'OFF'}}</div>
             </button>
         </div>
         <div class="entries" [ngClass]="{'disabled': isTimePaused}">

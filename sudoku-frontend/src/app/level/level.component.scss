@@ -29,6 +29,19 @@
             color: black;
             opacity: 0.5;
         }
+        .or {
+            margin: 5px 0px;
+        }
+        .load {
+            opacity: 1;
+            background-color: $secondary-color;
+            color: white;
+        }
+        input {
+            border: none;
+            outline: none;
+            border-bottom: 1px solid black;
+        }
         .selected {
             background: $secondary-color;
             color: white;
