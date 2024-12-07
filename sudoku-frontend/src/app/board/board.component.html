@@ -1,13 +1,13 @@
 <div class="container">
     <div class="board">
         <div class="top-container">
-            <i routerLink="/new-game" class="fa-solid fa-chevron-left back"></i>
+            <i routerLink="/" class="fa-solid fa-chevron-left back"></i>
             <i class="fa-solid fa-bars menu"></i>
         </div>
         <div class="top">
             <div class="sub-container">
                 <div class="title">Difficulty</div>
-                <div class="level">Easy</div>
+                <div class="level">{{difficulty}}</div>
             </div>
             <div class="time">
                 <div class="sub-container">
@@ -25,9 +25,10 @@
             </div>
             <div class="pause" *ngIf="isTimePaused">Resume</div>
             <div class="row" *ngFor="let box of boxes; let i = index" [ngClass]="{'disabled': isTimePaused}">
-                <div class="col" (click)="selectCell(i, j)" *ngFor="let box of boxes; let j = index" 
-                [ngClass]="{'br-l': j == 0, 'br-r': j == 2 || j == 5 || j == 8, 'br-t': i == 0, 'br-b': i == 2 || i == 5 || i == 8,
-                            'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': checkPuzzle(i,j) == true}">                
+                <div class="col" (click)="setPosition(i, j)" *ngFor="let box of boxes; let j = index" 
+                [ngClass]="{'br-l': j == 0, 'br-r': j%Math.sqrt(size) == Math.sqrt(size) - 1, 'br-t': i == 0, 'br-b': i%Math.sqrt(size) == Math.sqrt(size) - 1,
+                            'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': checkPuzzle(i,j) == true, 
+                            'hint': hintRow == i && hintCol == j && hintRow >= 0}">                
                     {{board[i][j] > 0 && !isTimePaused ? board[i][j] : ''}}
                     <div class="note-container" *ngIf="noteMode || clearNote(i, j)">
                         <div class="note-row" *ngFor="let noteBox of noteBoxes; let n = index">
@@ -40,9 +41,13 @@
             </div>
         </div>
         <div class="actions" [ngClass]="{'disabled': isTimePaused}">
-            <button (click)="setAction('UNDO')">
+            <button (click)="setAction('UNDO LAST')">
                 <i class="fa-solid fa-rotate-left"></i>
-                <div class="name">Undo</div>
+                <div class="name">Undo Last</div>
+            </button>
+            <button (click)="setAction('UNDO ALL')">
+                <i class="fa-solid fa-rotate-left"></i>
+                <div class="name">Undo All</div>
             </button>
             <button (click)="setAction('CHECK')">
                 <i class="fa-solid fa-gear"></i>
