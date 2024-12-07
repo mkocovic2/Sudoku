@@ -1,4 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { take } from 'rxjs';
+import { ApiService } from '../services/api.service';
 
 @Component({
   selector: 'app-board',
@@ -6,33 +9,14 @@ import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
   styleUrls: ['./board.component.scss']
 })
 export class BoardComponent implements OnInit {
+  constructor(
+    private route: ActivatedRoute,
+    private apiService: ApiService
+  ){}
 
   boxes = Array(9)
-  // board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
-  // puzzleSolution: number[][] = Array.from({length: 9}, () => Array(9).fill(0))
-  board = [
-    [0, 0, 0, 0, 2, 3, 8, 0, 7],
-    [0, 7, 0, 0, 0, 0, 0, 5, 0],
-    [2, 3, 0, 0, 8, 7, 0, 4, 1],
-    [0, 0, 1, 3, 0, 8, 0, 0, 0],
-    [0, 0, 3, 7, 4, 0, 0, 1, 2],
-    [4, 0, 7, 1, 0, 0, 6, 0, 8],
-    [1, 0, 9, 0, 3, 0, 7, 8, 0],
-    [0, 0, 0, 8, 7, 0, 0, 0, 5],
-    [7, 4, 0, 9, 0, 0, 3, 0, 0]
-  ];
-  puzzleSolution = [
-    [9, 1, 4, 5, 2, 3, 8, 6, 7],
-    [8, 7, 6, 4, 9, 1, 2, 5, 3],
-    [2, 3, 5, 6, 8, 7, 9, 4, 1],
-    [5, 2, 1, 3, 6, 8, 4, 7, 9],
-    [6, 8, 3, 7, 4, 9, 5, 1, 2],
-    [4, 9, 7, 1, 5, 2, 6, 3, 8],
-    [1, 5, 9, 2, 3, 6, 7, 8, 4],
-    [3, 6, 2, 8, 7, 4, 1, 9, 5],
-    [7, 4, 8, 9, 1, 5, 3, 2, 6]
-  ];
-  
+  board: number[][] = Array.from({ length: 9 }, () => Array(9).fill(0));
+  puzzleSolution: number[][] = Array.from({length: 9}, () => Array(9).fill(0))
   clickedBoxPosition: number[] = [-1, -1]
   noteMode: boolean = false
   action: string = ''
@@ -46,9 +30,21 @@ export class BoardComponent implements OnInit {
   );
   @ViewChild('time', { static: false }) time!: any;
   isTimePaused: boolean = false
+  difficulty: string = ''
+  session_id: string = ''
 
   ngOnInit(): void {
-    
+    this.route.queryParams.subscribe((params) => {
+      this.difficulty = params['difficulty'] || null;
+    });
+    this.apiService.boardObs.subscribe({
+      next: (res) => {
+        if (Object.keys(res).length > 0) {
+          this.board = res?.board
+          this.session_id = res?.session_id
+        }
+      }
+    }) 
   }
 
   selectCell(i:number, j:number) {
@@ -76,6 +72,13 @@ export class BoardComponent implements OnInit {
       if (this.board[x][y] == 0) {
         this.board[x][y] = value + 1
       }
+      const move = {
+					session_id: this.session_id,
+					row: x,
+					col: y,
+					value: value + 1
+      }
+      this.apiService.makeMove(move).subscribe()
     } 
   }
 
@@ -84,6 +87,14 @@ export class BoardComponent implements OnInit {
   }
 
   setAction(action: string) {
+    if (action == 'UNDO') {
+      this.action = action
+      this.apiService.undoMove({session_id: this.session_id}).subscribe({
+        next: (res: any) => {
+          if (res?.success) this.board = res?.updated_grid
+        }
+      })
+    }
     if (action == 'NOTE') {
       this.noteMode = !this.noteMode
     }
@@ -114,7 +125,7 @@ export class BoardComponent implements OnInit {
   }
 
   checkPuzzle(i: number, j: number) {
-    if (this.compareWithSolution(i,j) && this.action == 'CHECK') {
+    if (this.action == 'CHECK' && this.compareWithSolution(i,j)) {
       return true
     }
     return false
