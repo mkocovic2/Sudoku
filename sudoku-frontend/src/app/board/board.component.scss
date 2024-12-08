@@ -49,22 +49,26 @@
     }
     .board-container {
         position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         .pause-container {
             position: absolute;
-            width: calc((28px) * 9);
-            height: calc((28px) * 9);
+            // width: calc(($cell-size) * 9);
+            // height: calc(($cell-size) * 9);
             background: black;
             z-index: 1;
-            opacity: 0.1;
+            opacity: 0.05;
         }
         .pause {
             display: flex;
             align-items: center;
             justify-content: center;
             position: absolute;
-            width: calc((28px) * 9);
-            height: calc((28px) * 9);
-            color: rgb(84, 79, 79);
+            // width: calc(($cell-size) * 9);
+            // height: calc(($cell-size) * 9);
+            color: #3489eb;
             font-size: 14px;
             z-index: 2;
             animation: zoomInOut 1.2s infinite ease-in-out;
@@ -78,13 +82,14 @@
                 width: $cell-size;
                 height: $cell-size;
                 text-align: center;
-                color: rgba(0, 0, 0, 0.7);
+                color: #3489eb;
+                font-size: 19px;
                 cursor: pointer;
                 .note-container {
                     position: absolute;
-                    font-size: 6.5px;
-                    width: 22px;
-                    height: 19px;
+                    font-size: 8px;
+                    width: $cell-size;
+                    height: $cell-size;
                     top: 0.5px;
                     left: 2px;
                     .note-row {
@@ -96,14 +101,14 @@
                     }
                 }
             }
-            .hint {
-                background: yellow;
-            }
             .pre-defined {
-                color: rgb(70, 70, 198);
+                color: rgba(0, 0, 0, 0.7);
             }
             .selected {
                 background: rgb(218, 218, 224);
+            }
+            .hint {
+                background: #fcfa86;
             }
             .br-l {
                 border-left: 2px solid black;
@@ -118,8 +123,12 @@
                 border-bottom: 2px solid black;
             }
             .wrong-pos {
-             color: red;       
+             color: #f71e0a;       
             }
+        }
+        .invisible {
+            width: 0px;
+            height: 0px;
         }
     }
     .entries {
@@ -134,6 +143,16 @@
             margin: 5px 0px;
             font-weight: 600;
             cursor: pointer;
+            border: 1px solid $primary-color;
+            border-radius: 5px;
+            &:hover {
+                box-shadow: 1px 1px 1px 1px $primary-color;
+                background: #3489eb;
+                color: white;
+            }
+        }
+        .selected {
+
         }
     }
     .actions {
@@ -162,7 +181,7 @@
             }
             &:active {
                 i,.name {
-                    color: blue;
+                    color: #3489eb;
                 }
             }
             &:last-child {
@@ -172,7 +191,7 @@
                     width: 18px;
                     font-size: 9px;
                     font-weight: 600;
-                    left: -4px;
+                    left: 2px;
                     top: 0px;
                     background: $primary-color;
                     padding: 3px 5px;
@@ -189,7 +208,7 @@
         }
         .action {
             i, .name {
-                color: blue;
+                color: #3489eb;
             }
 
         }

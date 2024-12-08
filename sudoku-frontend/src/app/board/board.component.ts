@@ -32,11 +32,14 @@ export class BoardComponent implements OnInit {
   size: number = 0
   hintRow: number = -1
   hintCol: number = -1
+  boardId: string = ''
+  pauseSize: number = 38
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
       this.difficulty = params['difficulty'] || null;
       this.size = params['size'] || null;
+      this.boardId = params['boardId'] || null;
       this.boxes = Array.from({ length: this.size }).fill(0)
       this.board = Array.from({ length: this.size }, () => Array(this.size).fill(0))
       this.puzzleSolution = Array.from({ length: this.size }, () => Array(this.size).fill(0))
@@ -55,8 +58,17 @@ export class BoardComponent implements OnInit {
         if (Object.keys(res).length > 0) {
           this.board = JSON.parse(JSON.stringify(res?.board))
           this.puzzleSolution = JSON.parse(JSON.stringify(res?.board))
-          this.preDefined = JSON.parse(JSON.stringify(res?.board))
+          this.preDefined = JSON.parse(JSON.stringify(res?.preDefined))
           this.session_id = res?.session_id
+        } else {
+          this.apiService.loadBoard({board_id: this.boardId}).subscribe({
+            next: (res: any) => {
+                this.board = JSON.parse(JSON.stringify(res?.current_grid_state))
+                this.puzzleSolution = JSON.parse(JSON.stringify(res?.current_grid_state))
+                this.preDefined = JSON.parse(JSON.stringify(res?.original_puzzle))
+                this.session_id = res?.session_id
+            }
+          })
         }
       }
     }) 
@@ -77,7 +89,11 @@ export class BoardComponent implements OnInit {
     })
   }
 
-  setCell(value: number) {
+  setCell(value: any) {
+    // if (typeof(value) == number) value = value
+    // if (typeof(value) == KeyboardEvent) {
+    //   value = value.key
+    // }
     this.action = ''
     const [x, y] = this.getPosition()
     
@@ -156,10 +172,7 @@ export class BoardComponent implements OnInit {
   hint(row: number, col: number) {
     this.apiService.getHint({
       session_id: this.session_id,
-      select_cell: {
-        row: row,
-        col: col
-      }
+      selected_cell: row && row > -1 ? {row: row,col: col} : {}
     }).subscribe({
       next: (res: any) => {
         this.hintRow = res?.hint_row
@@ -168,6 +181,7 @@ export class BoardComponent implements OnInit {
         setTimeout(() => {
           this.hintRow = -1
           this.hintCol = -1
+          this.setPosition(-1,-1)
         }, 1000)
       }
     })
