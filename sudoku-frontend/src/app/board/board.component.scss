@@ -5,7 +5,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    width: 100%;
+    min-height: calc(100vh - 15px);
     font-family: $primary-font-family;
     .top-container {
         display: flex;
@@ -20,8 +21,24 @@
     .top {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         font-size: 12px;
-        margin: 5px 10px;
+        margin: 5px 10px 10px 0px;
+        .pause-btn {
+            border: 1px solid $tertiary-color;
+            border-radius: 50%;
+            height: 28px;
+            width: 28px;
+            background: none;
+            box-shadow: 0 0 4px 4px $primary-color;
+            cursor: pointer;
+            &:hover {
+                scale: 1.2;
+            }
+            i {
+                color: $tertiary-color;
+            }
+        }
         .time {
             display: flex;
             button {
@@ -33,17 +50,23 @@
                     width: 16px;
                 }
             }
-            .counter {
-                width: 28px;
-            }
         }
         .sub-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            .value {
+                font-size: medium;
+                color: $tertiary-color;
+            }
+            .timer {
+                // width: 28px;
+            }
             .title {
                 font-weight: 600;
+                font-size: large;
+                color: rgba(0, 0, 0, 0.7);
             }
         }
     }
@@ -68,8 +91,8 @@
             position: absolute;
             // width: calc(($cell-size) * 9);
             // height: calc(($cell-size) * 9);
-            color: #3489eb;
-            font-size: 14px;
+            color: $tertiary-color;
+            font-size: 18px;
             z-index: 2;
             animation: zoomInOut 1.2s infinite ease-in-out;
         }
@@ -82,7 +105,7 @@
                 width: $cell-size;
                 height: $cell-size;
                 text-align: center;
-                color: #3489eb;
+                color: $tertiary-color;
                 font-size: 19px;
                 cursor: pointer;
                 .note-container {
@@ -105,7 +128,7 @@
                 color: rgba(0, 0, 0, 0.7);
             }
             .selected {
-                background: rgb(218, 218, 224);
+                background: rgb(239, 239, 244);
             }
             .hint {
                 background: #fcfa86;
@@ -140,14 +163,14 @@
             width: 19px;
             height: 19px;
             text-align: center;
-            margin: 5px 0px;
+            // margin: 5px 0px;
             font-weight: 600;
             cursor: pointer;
             border: 1px solid $primary-color;
             border-radius: 5px;
             &:hover {
                 box-shadow: 1px 1px 1px 1px $primary-color;
-                background: #3489eb;
+                background: $tertiary-color;
                 color: white;
             }
         }
@@ -159,7 +182,7 @@
         display: flex;
         justify-content: space-evenly;
         align-items: center;
-        margin: 10px 0px;
+        margin: 5px 0px;
         button {
             width: 20%;
             height: 40px;
@@ -177,11 +200,12 @@
                 margin-bottom: 5px;
             }
             .name {
-                font-size: 11px;
+                font-size: 11.5px;
+                font-weight: 600;
             }
             &:active {
                 i,.name {
-                    color: #3489eb;
+                    color: $tertiary-color;
                 }
             }
             &:last-child {
@@ -198,6 +222,12 @@
                     border-radius: 15px;
                 }
             }
+            &:hover {
+                scale: 1.2;
+                i, .name {
+                    color: $tertiary-color;
+                }
+            }
         }
 
         .note {
@@ -208,7 +238,7 @@
         }
         .action {
             i, .name {
-                color: #3489eb;
+                color: $tertiary-color;
             }
 
         }

@@ -8,6 +8,8 @@ import { CdTimerModule } from 'angular-cd-timer';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CongradulationComponent } from './congradulation/congradulation.component';
+import { NavbarComponent } from './navbar/navbar.component';
+import { FooterComponent } from './footer/footer.component';
 
 @NgModule({
   declarations: [
@@ -15,6 +17,8 @@ import { CongradulationComponent } from './congradulation/congradulation.compone
     LevelComponent,
     BoardComponent,
     CongradulationComponent,
+    NavbarComponent,
+    FooterComponent,
   ],
   imports: [
     BrowserModule,
