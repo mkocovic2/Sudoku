@@ -7,17 +7,17 @@
         <div class="top">
             <div class="sub-container">
                 <div class="title">Difficulty</div>
-                <div class="level">{{difficulty}}</div>
+                <div class="value">{{difficulty}}</div>
             </div>
+            <button class="pause-btn" (click)="handleTime()">
+                <i *ngIf="!isTimePaused" class="fa-solid fa-pause"></i>
+                <i *ngIf="isTimePaused" class="fa-regular fa-circle-play"></i>
+            </button>
             <div class="time">
                 <div class="sub-container">
                     <div class="title">Time</div>
-                    <cd-timer class="counter" #time [format]="'ms'"></cd-timer>
+                    <cd-timer class="value timer" #time [format]="'ms'"></cd-timer>
                 </div>
-                <button (click)="handleTime()">
-                    <i *ngIf="!isTimePaused" class="fa-solid fa-pause"></i>
-                    <i *ngIf="isTimePaused" class="fa-regular fa-circle-play"></i>
-                </button>
             </div>
         </div>
         <div class="board-container">
@@ -58,7 +58,7 @@
                 <i class="fa-regular fa-lightbulb" (click)="setAction('HINT')"></i>
                 <div class="name">Hint</div>
             </button>
-            <button [ngClass]="{'action': action == 'NOTE'}"  [ngClass]="{'note': noteMode}">
+            <button  [ngClass]="{'note': noteMode, 'action': action == 'NOTE'}">
                 <i class="fa-regular fa-note-sticky" (click)="setAction('NOTE')"></i>
                 <div class="name" >Note</div>
                 <div class="note-mode" (click)="setAction('NOTE')">{{noteMode ? 'ON' : 'OFF'}}</div>

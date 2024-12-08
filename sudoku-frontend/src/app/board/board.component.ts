@@ -204,6 +204,9 @@ export class BoardComponent implements OnInit {
     }
     if (action == 'NOTE') {
       this.noteMode = !this.noteMode
+      if (!this.noteMode) {
+        this.action = ''
+      }
     }
   }
 

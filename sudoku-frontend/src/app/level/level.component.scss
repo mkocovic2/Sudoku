@@ -1,32 +1,48 @@
 @import '../../styles/variables.scss';
 
 .container {
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     font-family: $primary-font-family;
     height: calc(100vh - 100px);
-    .name {
-        font-size: x-large;
-        font-weight: 700;
-    }
+    color: rgba(0, 0, 0, 0.7);
+
     .sub-section {
         width: 30%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        .section-1, .section-2 {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            border: 1px solid $primary-color;
+            border-radius: 5px;
+            margin: 5px;
+            padding: 15px 5px;
+        }
         .middle {
             display: flex;
             justify-content: space-around;
             align-items: center;
             width: 100%;
+            .title {
+                font-size: 24px;
+                font-weight: 600;
+            }
         }
         button {
             background: $primary-color;
+            border: none;
             outline: transparent;
             color: black;
+            box-shadow: 0 0 4px 4px $primary-color;
             opacity: 0.5;
         }
         .or {
@@ -42,6 +58,7 @@
             outline: none;
             text-align: center;
             border-bottom: 1px solid black;
+            margin: 5px 0px;
         }
         .selected {
             background: $secondary-color;
@@ -53,7 +70,7 @@
         text-align: center;
         div {
             background: rgb(217, 217, 217, 0.4);
-            color: black;
+            color: rgba(0, 0, 0, 0.7);
             font-size: 14px;
         }
     }
