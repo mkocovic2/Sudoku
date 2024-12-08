@@ -21,14 +21,14 @@
             </div>
         </div>
         <div class="board-container">
-            <div class="pause-container" *ngIf="isTimePaused">
+            <div class="pause-container" [style.width.px]="pauseSize*size" [style.height.px]="pauseSize*size" *ngIf="isTimePaused">
             </div>
-            <div class="pause" *ngIf="isTimePaused">Resume</div>
+            <div class="pause" [style.width.px]="pauseSize*size" [style.height.px]="pauseSize*size" *ngIf="isTimePaused">Resume</div>
             <div class="row" *ngFor="let box of boxes; let i = index" [ngClass]="{'disabled': isTimePaused}">
                 <div class="col" (click)="setPosition(i, j)" *ngFor="let box of boxes; let j = index" 
                 [ngClass]="{'br-l': j == 0, 'br-r': j%Math.sqrt(size) == Math.sqrt(size) - 1, 'br-t': i == 0, 'br-b': i%Math.sqrt(size) == Math.sqrt(size) - 1,
                             'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': checkPuzzle(i,j) == true, 
-                            'hint': hintRow == i && hintCol == j && hintRow >= 0, 'pre-defined': preDefined[i][j] != 0 || preDefined[i][j] != null}">                
+                            'hint': hintRow == i && hintCol == j && hintRow >= 0, 'pre-defined': preDefined[i][j]}">                
                     {{board[i][j] > 0 && !isTimePaused ? board[i][j] : ''}}
                     <div class="note-container" *ngIf="noteMode || clearNote(i, j)">
                         <div class="note-row" *ngFor="let noteBox of noteBoxes; let n = index">
@@ -37,6 +37,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- <input class="invisible" type="text"> -->
                 </div>
             </div>
         </div>
@@ -50,7 +51,7 @@
                 <div class="name">Undo All</div>
             </button>
             <button [ngClass]="{'action': action == 'CHECK'}" >
-                <i class="fa-solid fa-gear" (click)="setAction('CHECK')"></i>
+                <i class="fa-solid fa-check" (click)="setAction('CHECK')"></i>
                 <div class="name">Check</div>
             </button>
             <button [ngClass]="{'action': action == 'HINT'}" >
@@ -64,7 +65,7 @@
             </button>
         </div>
         <div class="entries" [ngClass]="{'disabled': isTimePaused}">
-            <div class="entry" (click)="setCell(i)" *ngFor="let entry of boxes; let i = index">{{i+1}}</div>
+            <div class="entry" [ngClass]="{'selected': true}" (click)="setCell(i)" *ngFor="let entry of boxes; let i = index">{{i+1}}</div>
         </div>
     </div>
 </div>
