@@ -38,6 +38,19 @@ export class ApiService {
     return this.http.post(path, data)
   }
 
+  updateTime(data: any) {
+    // const path = `${environment.baseUrl}/save_time`;
+    // return this.http.post(path, data)
+    const endpoint = `${environment.baseUrl}/save_time`;
+  
+    fetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+    });
+  }
+
   getHint(data: any) {
     const path = `${environment.baseUrl}/get_hint`;
     return this.http.post(path, data)

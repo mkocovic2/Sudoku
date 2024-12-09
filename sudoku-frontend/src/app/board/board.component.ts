@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { take } from 'rxjs';
 import { ApiService } from '../services/api.service';
@@ -34,6 +34,12 @@ export class BoardComponent implements OnInit {
   hintCol: number = -1
   boardId: string = ''
   pauseSize: number = 38
+  startTime: number = -1
+
+  @HostListener('window:beforeunload', ['$event'])
+  onWindowReload(event: BeforeUnloadEvent): void {
+    this.updateTime()
+  }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
@@ -59,7 +65,8 @@ export class BoardComponent implements OnInit {
           this.board = JSON.parse(JSON.stringify(res?.board))
           this.puzzleSolution = JSON.parse(JSON.stringify(res?.board))
           this.preDefined = JSON.parse(JSON.stringify(res?.preDefined))
-          this.session_id = res?.session_id
+          this.session_id = res?.session_id,
+          this.startTime = res?.time_taken
         } else {
           this.apiService.loadBoard({board_id: this.boardId}).subscribe({
             next: (res: any) => {
@@ -67,11 +74,17 @@ export class BoardComponent implements OnInit {
                 this.puzzleSolution = JSON.parse(JSON.stringify(res?.current_grid_state))
                 this.preDefined = JSON.parse(JSON.stringify(res?.original_puzzle))
                 this.session_id = res?.session_id
+                this.startTime = res?.time_taken
+                setTimeout(() => {this.startTime = res?.time_taken}, 100)
             }
           })
         }
       }
     }) 
+  }
+
+  backToMenu() {
+    this.updateTime()
   }
 
   makeMove(x:number, y:number, value:number) {
@@ -208,6 +221,15 @@ export class BoardComponent implements OnInit {
         this.action = ''
       }
     }
+  }
+
+  updateTime() {
+    const {hours, minutes, seconds} = this.time.get()
+    const totalTime = hours*3600 + minutes*60 + seconds
+    this.apiService.updateTime({
+      board_id: this.boardId,
+      time_taken: totalTime
+    });
   }
 
   filterWrongMoves() {
