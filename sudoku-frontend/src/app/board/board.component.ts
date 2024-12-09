@@ -19,6 +19,7 @@ export class BoardComponent implements OnInit {
   boxes: any[] = []
   board: number[][] = [];
   puzzleSolution: number[][] = []
+  wrongMoves: boolean[][] = []
   preDefined: number[][] = []
   clickedBoxPosition: number[] = [-1, -1]
   noteMode: boolean = false
@@ -35,6 +36,8 @@ export class BoardComponent implements OnInit {
   boardId: string = ''
   pauseSize: number = 38
   startTime: number = -1
+  fourByFour: number = 64
+  nineByNine: number = 32
 
   @HostListener('window:beforeunload', ['$event'])
   onWindowReload(event: BeforeUnloadEvent): void {
@@ -48,6 +51,7 @@ export class BoardComponent implements OnInit {
       this.boardId = params['boardId'] || null;
       this.boxes = Array.from({ length: this.size }).fill(0)
       this.board = Array.from({ length: this.size }, () => Array(this.size).fill(0))
+      this.wrongMoves = Array.from({ length: this.size }, () => Array.from({length: this.size}, () => false))
       this.puzzleSolution = Array.from({ length: this.size }, () => Array(this.size).fill(0))
       this.preDefined = Array.from({ length: this.size }, () => Array(this.size).fill(0))
       this.noteBoxes = Array.from({ length: this.Math.sqrt(this.size) }).fill(0)
@@ -65,6 +69,7 @@ export class BoardComponent implements OnInit {
           this.board = JSON.parse(JSON.stringify(res?.board))
           this.puzzleSolution = JSON.parse(JSON.stringify(res?.board))
           this.preDefined = JSON.parse(JSON.stringify(res?.preDefined))
+          this.wrongMoves = Array.from({ length: this.size }, () => Array.from({length: this.size}, () => false))
           this.session_id = res?.session_id,
           this.startTime = res?.time_taken
         } else {
@@ -73,6 +78,7 @@ export class BoardComponent implements OnInit {
                 this.board = JSON.parse(JSON.stringify(res?.current_grid_state))
                 this.puzzleSolution = JSON.parse(JSON.stringify(res?.current_grid_state))
                 this.preDefined = JSON.parse(JSON.stringify(res?.original_puzzle))
+                this.wrongMoves = Array.from({ length: this.size }, () => Array.from({length: this.size}, () => false))
                 this.session_id = res?.session_id
                 this.startTime = res?.time_taken
                 setTimeout(() => {this.startTime = res?.time_taken}, 100)
@@ -191,6 +197,7 @@ export class BoardComponent implements OnInit {
         this.hintRow = res?.hint_row
         this.hintCol = res?.hint_col
         this.board[this.hintRow][this.hintCol] = res?.hint_value
+        this.wrongMoves[this.hintRow][this.hintCol] = false
         setTimeout(() => {
           this.hintRow = -1
           this.hintCol = -1
@@ -209,6 +216,7 @@ export class BoardComponent implements OnInit {
       this.undoAll()
     }
     if (action == 'CHECK') {
+      this.filterWrongMoves()
       this.check()
     }
     if (action == 'HINT') {
@@ -233,32 +241,47 @@ export class BoardComponent implements OnInit {
   }
 
   filterWrongMoves() {
-    const wrongMoves = new Map();
-    for(let i=0; i<9; i++) {
-      for(let j=0; j<9; j++) {
-        if(this.puzzleSolution[i][j] != this.board[i][j]) {
-          wrongMoves.set(JSON.stringify([i,j]), [i,j])
+    // const wrongMoves = new Map();
+    // for(let i=0; i<9; i++) {
+    //   for(let j=0; j<9; j++) {
+    //     if(this.puzzleSolution[i][j] != this.board[i][j]) {
+    //       wrongMoves.set(JSON.stringify([i,j]), [i,j])
+    //     }
+    //   }
+    // }
+    this.apiService.getIncorrectMoves({
+      session_id: this.session_id,
+      current_grid_state: this.board
+    }).subscribe({
+      next: (res: any) => {
+        for (let position of Object.keys(res?.wrong_moves)){
+          const i = JSON.parse(position)[0]
+          const j = JSON.parse(position)[1]
+          if (this.board[i][j] && this.board[i][j] > 0) {
+            this.wrongMoves[i][j] = true
+          }
         }
       }
-    }
+    })
 
-    return wrongMoves
+    // return wrongMoves
   }
 
-  compareWithSolution(i: number, j: number) {
-    const wrongMoves = this.filterWrongMoves()
-    if (wrongMoves.has(JSON.stringify([i,j]))) {
-      return true
-    }
-    return false
-  }
+  // compareWithSolution(i: number, j: number) {
+  //   // console.log('res', this.wrongMoves)
+  //   const wrongMoves = this.wrongMoves
+  //   if (wrongMoves[JSON.stringify([i,j])] == JSON.stringify([i,j])) {
+  //     return true
+  //   }
+  //   return false
+  // }
 
-  checkPuzzle(i: number, j: number) {
-    if (this.action == 'CHECK' && this.compareWithSolution(i,j)) {
-      return true
-    }
-    return false
-  }
+  // checkPuzzle(i: number, j: number) {
+  //   if (this.action == 'CHECK' && this.compareWithSolution(i,j)) {
+  //     return true
+  //   }
+  //   return false
+  // }
 
   handleTime() {
     this.isTimePaused = !this.isTimePaused

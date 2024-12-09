@@ -26,12 +26,12 @@
             </div>
             <div class="pause" [style.width.px]="pauseSize*size" [style.height.px]="pauseSize*size" *ngIf="isTimePaused">Resume</div>
             <div class="row" *ngFor="let box of boxes; let i = index" [ngClass]="{'disabled': isTimePaused}">
-                <div class="col" (click)="setPosition(i, j)" *ngFor="let box of boxes; let j = index" 
+                <div class="col" [style.font-size.px]="size == 9 ? 19 : 36" [style.width.px]="size == 9 ? nineByNine : fourByFour" [style.height.px]="size == 9 ? nineByNine : fourByFour" (click)="setPosition(i, j)" *ngFor="let box of boxes; let j = index" 
                 [ngClass]="{'br-l': j == 0, 'br-r': j%Math.sqrt(size) == Math.sqrt(size) - 1, 'br-t': i == 0, 'br-b': i%Math.sqrt(size) == Math.sqrt(size) - 1,
-                            'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': checkPuzzle(i,j) == true, 
+                            'selected': clickedBoxPosition[0] == i && clickedBoxPosition[1] == j && !isTimePaused, 'wrong-pos': wrongMoves[i][j], 
                             'hint': hintRow == i && hintCol == j && hintRow >= 0, 'pre-defined': preDefined[i][j]}">                
                     {{board[i][j] > 0 && !isTimePaused ? board[i][j] : ''}}
-                    <div class="note-container" *ngIf="noteMode || clearNote(i, j)">
+                    <div [style.font-size.px]="size == 9 ? 8 : 16" [style.width.px]="size == 9 ? nineByNine : fourByFour" [style.height.px]="size == 9 ? nineByNine : fourByFour" class="note-container" *ngIf="noteMode || clearNote(i, j)">
                         <div class="note-row" *ngFor="let noteBox of noteBoxes; let n = index">
                             <div class="note-col" *ngFor="let noteCol of noteBoxes; let m = index">
                                  {{noteBoard[i][j][n][m] > 0 ? noteBoard[i][j][n][m] : ' '}}

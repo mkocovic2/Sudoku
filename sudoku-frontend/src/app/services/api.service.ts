@@ -28,6 +28,11 @@ export class ApiService {
     return this.http.post(path, data)
   }
 
+  getIncorrectMoves(data: any) {
+    const path = `${environment.baseUrl}/store_incorrect_moves`;
+    return this.http.post(path, data)
+  }
+  
   undoMove(data: any) {
     const path = `${environment.baseUrl}/undo_move`;
     return this.http.post(path, data)
