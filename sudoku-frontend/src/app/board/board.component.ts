@@ -81,7 +81,7 @@ export class BoardComponent implements OnInit {
                 this.wrongMoves = Array.from({ length: this.size }, () => Array.from({length: this.size}, () => false))
                 this.session_id = res?.session_id
                 this.startTime = res?.time_taken
-                setTimeout(() => {this.startTime = res?.time_taken}, 100)
+                // setTimeout(() => {this.startTime = res?.time_taken}, 100)
             }
           })
         }
