@@ -28,7 +28,7 @@ export class LevelComponent {
       this.apiService.startPuzzle(game).pipe(take(1)).subscribe({
         next: (res: any) => {
           if (Object.keys(res).length > 0) {
-            this.apiService.updateBoard({board: res?.initial_grid, preDefined: res?.initial_grid, session_id: res?.session_id})
+            this.apiService.updateBoard({board: res?.initial_grid, preDefined: res?.initial_grid, session_id: res?.session_id, time_taken: 0})
             this.router.navigate(['/board'], {
               queryParams: {difficulty: this.difficulty, size: this.size, boardId: res?.board_id}
             })
@@ -41,7 +41,7 @@ export class LevelComponent {
     this.apiService.loadBoard({board_id: this.boardId}).subscribe({
       next: (res: any) => {
         {
-          this.apiService.updateBoard({board: res?.current_grid_state, preDefined: res?.original_puzzle, session_id: res?.session_id})
+          this.apiService.updateBoard({board: res?.current_grid_state, preDefined: res?.original_puzzle, session_id: res?.session_id, time_taken: res?.time_taken})
           this.router.navigate(['/board'], {
             queryParams: {difficulty: res?.difficulty, size: res?.puzzle_size, boardId: res?.board_id}
           })

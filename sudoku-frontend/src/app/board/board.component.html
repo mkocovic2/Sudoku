@@ -1,7 +1,7 @@
 <div class="container">
     <div class="board">
         <div class="top-container">
-            <i routerLink="/" class="fa-solid fa-chevron-left back"></i>
+            <i routerLink="/" (click)="backToMenu()" class="fa-solid fa-chevron-left back"></i>
             <i class="fa-solid fa-bars menu"></i>
         </div>
         <div class="top">
@@ -16,7 +16,8 @@
             <div class="time">
                 <div class="sub-container">
                     <div class="title">Time</div>
-                    <cd-timer class="value timer" #time [format]="'ms'"></cd-timer>
+                    <cd-timer *ngIf="startTime > -1" class="value timer" #time [startTime]="startTime" [format]="'ms'"></cd-timer>
+                    <cd-timer *ngIf="startTime == -1" class="value timer" #time [format]="'ms'"></cd-timer>
                 </div>
             </div>
         </div>
