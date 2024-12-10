@@ -9,3 +9,9 @@
     top: 35px;
     flex: 1;
 }
+
+@media screen and (max-width: 450px) {
+  .content {
+    top: 0px;
+  }   
+}
