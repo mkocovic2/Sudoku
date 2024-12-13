@@ -3,6 +3,8 @@ from history_stack import HistoryStack
 import random
 
 
+### Worked on by Danny Goldblum with help from Michael Kocovic ###
+
 class SudokuPuzzle:
     def __init__(self, size: int = 9):
         if size not in [4, 9]:  # Allow only 4x4 or 9x9 Sudoku boards
@@ -10,6 +12,7 @@ class SudokuPuzzle:
         self.size = size
         self.grid = [[SudokuCell((row, col), correct_value=None)
                       for col in range(size)] for row in range(size)]
+        self.time = 0
         self.history = HistoryStack()
 
     # Method to initialize the puzzle with correct values
@@ -112,7 +115,9 @@ def hint(self, selected_cell=None):
         cell.set_inserted_value(cell.get_correct_value())
         return row, col, cell.get_correct_value()
 
-
+    def exit_puzzle(time):
+        self.time = time
+        puzzle_state = self.get_puzzle_state()
     # Display methods for testing
 
     def display(self):
