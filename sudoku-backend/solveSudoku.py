@@ -1,10 +1,21 @@
+"""
+Main Contributor - Michael and Danny
+Basic solver to solve MongoDB puzzles quickly.
+Not used much since some of the puzzles 
+generated were incompatable.
+
+Danny came up with the basic algorithms
+
+Michael implemented puzzle retrieval 
+from the database.
+"""
 from pymongo import MongoClient
 import copy
 
 # Connect to MongoDB
 client = MongoClient(
-    'mongodb://mongoadmin:teamcMongo@exodus.viewdns.net:27017/')
-# replace 'your_database_name' with your actual database name
+    '--Replaced for security purposes--')
+
 db = client['sudoku_database']
 
 # List of collections to iterate through
