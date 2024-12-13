@@ -5,14 +5,15 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
-from puzzle_object import SudokuPuzzle  # Your existing Sudoku class
+from puzzle_object import SudokuPuzzle
+from cell_object import SudokuCell 
 import json
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # MongoDB Connection
-client = MongoClient('mongodb://mongoadmin:teamcMongo@exodus.viewdns.net:27017/')
+client = MongoClient('--Removed Connection for Security Purposes--')
 db = client['sudoku_database']
 puzzles_collections = {
     'Easy': db['Easy'],
@@ -27,6 +28,14 @@ def generate_board_id(length=8):
     """
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
+
+def create_sudoku_puzzle_from_grid(grid, size):
+    """
+    Create a SudokuPuzzle object from a grid and set its correct values
+    """
+    puzzle = SudokuPuzzle(size=size)
+    puzzle.set_correct_values(grid)
+    return puzzle
 
 @app.route('/start_puzzle', methods=['POST'])
 def start_puzzle():
@@ -62,6 +71,9 @@ def start_puzzle():
     # Generate a unique board ID
     board_id = generate_board_id()
 
+    # Create a SudokuPuzzle object to enhance object interaction
+    sudoku_puzzle = create_sudoku_puzzle_from_grid(puzzle_doc['puzzle'], puzzle_size)
+
     # Prepare user session document
     user_session = {
         'board_id': board_id,  # Add board_id for easy retrieval
@@ -74,7 +86,12 @@ def start_puzzle():
         'start_time': datetime.utcnow(),
         'last_updated': datetime.utcnow(),
         'is_completed': False,
-        'time_taken': 0
+        'time_taken': 0,
+        # Add metadata from SudokuPuzzle object
+        'puzzle_object_metadata': {
+            'is_solved': sudoku_puzzle.is_solved(),
+            'is_filled': sudoku_puzzle.is_filled()
+        }
     }
 
     # Insert user session
@@ -83,7 +100,12 @@ def start_puzzle():
     return jsonify({
         'session_id': str(session_id),
         'board_id': board_id,
-        'initial_grid': puzzle_doc['puzzle']
+        'initial_grid': puzzle_doc['puzzle'],
+        # Include additional metadata
+        'puzzle_metadata': {
+            'is_solved': sudoku_puzzle.is_solved(),
+            'is_filled': sudoku_puzzle.is_filled()
+        }
     }), 200
 
 
@@ -125,38 +147,41 @@ def undo_move():
     if not session:
         return jsonify({'error': 'Session not found'}), 404
 
-    # Pop last history entry
-    if session['history_stack']:
-        last_move = session['history_stack'].pop()
-        
-        # Retrieve the cell details
-        row = last_move['cell_details']['row']
-        col = last_move['cell_details']['col']
-        previous_value = last_move['cell_details']['previous_value']
-        
-        # Get current grid state
-        current_grid = session['current_grid_state']
-        
-        # Revert the cell to its previous value
-        current_grid[row][col] = previous_value
-        
-        user_sessions_collection.update_one(
-            {'_id': session_id},
-            {
-                '$set': {
-                    'current_grid_state': current_grid,
-                    'history_stack': session['history_stack'],
-                    'last_updated': datetime.utcnow()
-                }
-            }
-        )
-
-        return jsonify({
-            'success': True, 
-            'updated_grid': current_grid
-        }), 200
-    else:
+    # Retrieve history stack data
+    history_stack_data = session.get('history_stack_data', [])
+    
+    # Check if there are moves to undo
+    if not history_stack_data:
         return jsonify({'error': 'No moves to undo'}), 400
+
+    # Remove the last move
+    last_move = history_stack_data.pop()
+    
+    # Retrieve the details of the last move
+    row = last_move['cell_details']['row']
+    col = last_move['cell_details']['col']
+    previous_value = last_move['cell_details']['previous_value']
+    
+    # Get current grid state and revert the specific cell
+    current_grid = session['current_grid_state']
+    current_grid[row][col] = previous_value
+    
+    # Update user session
+    user_sessions_collection.update_one(
+        {'_id': session_id},
+        {
+            '$set': {
+                'current_grid_state': current_grid,
+                'history_stack_data': history_stack_data,
+                'last_updated': datetime.utcnow()
+            }
+        }
+    )
+
+    return jsonify({
+        'success': True, 
+        'updated_grid': current_grid
+    }), 200
 
 @app.route('/check_solution', methods=['POST'])
 def check_solution():
@@ -345,11 +370,7 @@ def get_hint():
 def process_move():
     """
     Process a user's move in the Sudoku puzzle and check its correctness
-    Request body should contain:
-    - session_id
-    - row
-    - col
-    - value
+    Using SudokuCell and SudokuPuzzle object methods for validation
     """
     data = request.json
     session_id = ObjectId(data['session_id'])
@@ -366,13 +387,18 @@ def process_move():
     puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
     solution = puzzle_doc['solution']
 
-    # Check if the entered value matches the solution
-    is_correct = (solution[row][col] == value)
-
-    # Update grid state and history
-    current_grid = session['current_grid_state']
+    # Create SudokuPuzzle object to leverage object methods
+    sudoku_puzzle = create_sudoku_puzzle_from_grid(session['current_grid_state'], session['puzzle_size'])
     
-    # Store previous value for undo functionality
+    # Use SudokuCell to create a cell and set its inserted value
+    cell = SudokuCell((row, col), correct_value=solution[row][col])
+    cell.set_inserted_value(value)
+
+    # Check correctness using the cell's built-in method
+    is_correct = cell.get_is_correct()
+
+    # Update grid state
+    current_grid = session['current_grid_state']
     previous_value = current_grid[row][col]
     current_grid[row][col] = value
 
@@ -383,7 +409,11 @@ def process_move():
             'row': row,
             'col': col,
             'previous_value': previous_value,
-            'new_value': value
+            'new_value': value,
+            'cell_metadata': {
+                'is_correct': is_correct,
+                'location': cell.get_location()
+            }
         }
     }
 
@@ -393,7 +423,11 @@ def process_move():
         {
             '$set': {
                 'current_grid_state': current_grid,
-                'last_updated': datetime.utcnow()
+                'last_updated': datetime.utcnow(),
+                'puzzle_object_metadata': {
+                    'is_solved': sudoku_puzzle.is_solved(),
+                    'is_filled': sudoku_puzzle.is_filled()
+                }
             },
             '$push': {'history_stack': history_entry}
         }
@@ -403,7 +437,11 @@ def process_move():
         'success': True, 
         'is_correct': is_correct,
         'correct_value': solution[row][col],
-        'updated_grid': current_grid
+        'updated_grid': current_grid,
+        'puzzle_metadata': {
+            'is_solved': sudoku_puzzle.is_solved(),
+            'is_filled': sudoku_puzzle.is_filled()
+        }
     }), 200
 
 @app.route('/save_time', methods=['POST'])
