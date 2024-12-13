@@ -1,3 +1,16 @@
+"""
+Main Contributor : Michael Kocovic, worked on most of routes and functions
+Ensured back-end connection and object implementation. Had a hand in 
+development in all functions.
+
+Mintesnot Kassa : Fixed some return errors with the API's, ensured routes were
+correctly returning information for the frontend. Developed time saving func with
+Michael.
+
+Danny Goldblum: Ensured serialization worked properly, updated history stack
+and made it faster. Fixed broken routes and improved speeds. Had a hand in 
+the load board, undo move, and undo until correct.
+"""
 import string
 import random
 from flask import Flask, request, jsonify
