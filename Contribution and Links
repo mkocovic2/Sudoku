@@ -9,5 +9,12 @@ Frontend: Primarily done by Mintesnot with help from Danny and Michael
 API Integration: Primarily done by Michael with help from Danny and Mintesnot
 Testing: Done by all three of us
 
+Frontend comments/code description files are:-
+1. src/app/board/board.componet.ts
+2. src/app/levels/level.component.ts
+3. src/app/services/api.service.ts
+4. src/app/app.component.ts
+5. src/style.css
+
 In class updates:
 https://docs.google.com/presentation/d/1i4OaTbtk0NjFzGb4bbxF1BU-hDFy-JaV8tDVUK-2HM4/edit?usp=sharing

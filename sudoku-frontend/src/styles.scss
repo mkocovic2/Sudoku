@@ -1,13 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
+//import app global colors
 @import './styles/variables.scss';
+//import Poppins as default font
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+//import fonteawesome icons
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
 
+//set background image
 body {
-    // background: black;
     background-image: url('assets/images/tile_background.png');
 }
-
+//set app default button
 .app-btn {
     font-size: 16px;
     font-weight: 600;
