@@ -2,7 +2,7 @@
 
 ### **Contributors**
 #### Mintesnot Kassa
-  Primarily worked on Front-end responsiveness and architecture. Contributed to API decisions and functions by fixing routing errors and incorrect returns. Helped the team with creating the skeleton for the test-frontend for easier integration. 
+  Primarily worked on Front-end development and architecture. Contributed to API decisions and functions by fixing routing errors and incorrect returns. Helped the team with creating the skeleton for the test-frontend for easier integration. 
 Created a majority of the JS functions for routes in the front-end, and ensured responsive design for mobile devices.
 #### Danny Goldblum
   Primarily worked on the object design and API for the back-end. Expanded the test front-end for more visual support, and worked on some the puzzle generation and solving algorithms. Main contributer to the object files and helped with API function routing. Created test routes on the API, and later integrated with some of the object files. Worked on the some of basic UI buttons on the front-end.
