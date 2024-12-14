@@ -1,7 +1,8 @@
 """
 Main Contributor : Michael Kocovic, worked on most of routes and functions
 Ensured back-end connection and object implementation. Had a hand in 
-development in all functions.
+development in all functions. Connected API routes to database, created document
+search for specific boards and id's and worked on main board functionality.
 
 Mintesnot Kassa : Fixed some return errors with the API's, ensured routes were
 correctly returning information for the frontend. Developed time saving func with
@@ -20,13 +21,15 @@ from bson import ObjectId
 from datetime import datetime
 from puzzle_object import SudokuPuzzle
 from cell_object import SudokuCell 
+from history_stack import HistoryStack
 import json
+import copy
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # MongoDB Connection
-client = MongoClient('--Removed Connection for Security Purposes--')
+client = MongoClient('mongodb://mongoadmin:teamcMongo@exodus.viewdns.net:27017/')
 db = client['sudoku_database']
 puzzles_collections = {
     'Easy': db['Easy'],
@@ -49,6 +52,65 @@ def create_sudoku_puzzle_from_grid(grid, size):
     puzzle = SudokuPuzzle(size=size)
     puzzle.set_correct_values(grid)
     return puzzle
+
+def create_history_stack_from_saved_data(history_data):
+    """
+    Convert saved history data into a HistoryStack object
+    """
+    history_stack = HistoryStack()
+    
+    # If history data exists, recreate the stack
+    if history_data:
+        for entry in history_data:
+            # Use the push method to reconstruct the stack
+            history_stack.push(
+                entry['action'], 
+                entry.get('puzzle_state', None)
+            )
+    
+    return history_stack
+
+
+def _convert_history_stack(session):
+    """
+    Convert stored history data to a HistoryStack object
+    """
+    history_stack = HistoryStack()
+    
+    # Retrieve history data from the session
+    history_data = session.get('history_stack', [])
+    
+    # Populate the history stack
+    for entry in history_data:
+        history_stack.push(
+            entry['action'], 
+            entry.get('puzzle_state', session.get('current_grid_state'))
+        )
+    
+    return history_stack
+
+def _save_history_stack(session_id, history_stack):
+    """
+    Save HistoryStack to the user session
+    """
+    # Convert HistoryStack to a storable format
+    history_data = [
+        {
+            'action': entry['action'], 
+            'puzzle_state': entry['puzzle_state']
+        } for entry in history_stack.stack
+    ]
+    
+    # Update the session with the history data
+    user_sessions_collection.update_one(
+        {'_id': session_id},
+        {
+            '$set': {
+                'history_stack': history_data,
+                'last_updated': datetime.utcnow()
+            }
+        }
+    )
 
 @app.route('/start_puzzle', methods=['POST'])
 def start_puzzle():
@@ -160,40 +222,35 @@ def undo_move():
     if not session:
         return jsonify({'error': 'Session not found'}), 404
 
-    # Retrieve history stack data
-    history_stack_data = session.get('history_stack_data', [])
+    # Recreate history stack
+    history_stack = _convert_history_stack(session)
     
     # Check if there are moves to undo
-    if not history_stack_data:
+    if not history_stack.stack:
         return jsonify({'error': 'No moves to undo'}), 400
 
-    # Remove the last move
-    last_move = history_stack_data.pop()
-    
-    # Retrieve the details of the last move
-    row = last_move['cell_details']['row']
-    col = last_move['cell_details']['col']
-    previous_value = last_move['cell_details']['previous_value']
-    
-    # Get current grid state and revert the specific cell
-    current_grid = session['current_grid_state']
-    current_grid[row][col] = previous_value
+    # Retrieve the previous grid state
+    last_move = history_stack.pop()
+    previous_grid_state = last_move['puzzle_state']
     
     # Update user session
     user_sessions_collection.update_one(
         {'_id': session_id},
         {
             '$set': {
-                'current_grid_state': current_grid,
-                'history_stack_data': history_stack_data,
+                'current_grid_state': previous_grid_state,
                 'last_updated': datetime.utcnow()
             }
         }
     )
 
+    # Save updated history stack
+    _save_history_stack(session_id, history_stack)
+
     return jsonify({
         'success': True, 
-        'updated_grid': current_grid
+        'updated_grid': previous_grid_state,
+        'undone_action': last_move['action']
     }), 200
 
 @app.route('/check_solution', methods=['POST'])
@@ -249,56 +306,59 @@ def undo_until_correct():
     puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
     solution = puzzle_doc['solution']
 
-    # Create copies to modify
-    current_grid = session['current_grid_state']
-    history_stack = session['history_stack'].copy()
+    # Recreate history stack
+    history_stack = _convert_history_stack(session)
 
-    # Find the first incorrect move's index
-    first_incorrect_index = -1
-    for i, move in enumerate(history_stack):
-        row = move['cell_details']['row']
-        col = move['cell_details']['col']
-        
-        # Check if this move is incorrect
-        if current_grid[row][col] != solution[row][col]:
-            first_incorrect_index = i
-            break
-
-    # If no incorrect move found, return current state
-    if first_incorrect_index == -1:
+    # If no moves, return current state
+    if not history_stack.stack:
         return jsonify({
             'success': True, 
-            'updated_grid': current_grid
+            'updated_grid': session['current_grid_state']
         }), 200
 
-    # Undo moves starting from the first incorrect move
-    for i in range(len(history_stack) - 1, first_incorrect_index - 1, -1):
-        move = history_stack[i]
-        row = move['cell_details']['row']
-        col = move['cell_details']['col']
-        previous_value = move.get('cell_details', {}).get('previous_value', 0)
-        
-        # Revert the cell to its previous value
-        current_grid[row][col] = previous_value
+    # Find the first incorrect grid state
+    while history_stack.stack:
+        # Peek at the last move without removing it
+        last_move = history_stack.peek()
+        current_grid_state = last_move['puzzle_state']
 
-    # Truncate history stack to remove incorrect and subsequent moves
-    history_stack = history_stack[:first_incorrect_index]
+        # Check if the current grid state is incorrect
+        is_incorrect = False
+        for i in range(len(current_grid_state)):
+            for j in range(len(current_grid_state[i])):
+                if current_grid_state[i][j] != solution[i][j]:
+                    is_incorrect = True
+                    break
+            if is_incorrect:
+                break
 
-    # Update the user session
+        # If incorrect, pop the move
+        if is_incorrect:
+            history_stack.pop()
+        else:
+            # Found the last correct state
+            break
+
+    # If all moves were incorrect, reset to original puzzle
+    current_grid_state = history_stack.peek()['puzzle_state'] if history_stack.stack else session['original_puzzle']
+
+    # Update user session
     user_sessions_collection.update_one(
         {'_id': session_id},
         {
             '$set': {
-                'current_grid_state': current_grid,
-                'history_stack': history_stack,
+                'current_grid_state': current_grid_state,
                 'last_updated': datetime.utcnow()
             }
         }
     )
 
+    # Save updated history stack
+    _save_history_stack(session_id, history_stack)
+
     return jsonify({
         'success': True, 
-        'updated_grid': current_grid
+        'updated_grid': current_grid_state
     }), 200
 
 @app.route('/get_hint', methods=['POST'])
@@ -400,6 +460,9 @@ def process_move():
     puzzle_doc = puzzles_collections[session['difficulty']].find_one({'_id': session['puzzle_id']})
     solution = puzzle_doc['solution']
 
+    # Recreate history stack
+    history_stack = _convert_history_stack(session)
+
     # Create SudokuPuzzle object to leverage object methods
     sudoku_puzzle = create_sudoku_puzzle_from_grid(session['current_grid_state'], session['puzzle_size'])
     
@@ -415,20 +478,11 @@ def process_move():
     previous_value = current_grid[row][col]
     current_grid[row][col] = value
 
-    # Create history entry
-    history_entry = {
-        'action': f'Set cell ({row}, {col}) to {value}',
-        'cell_details': {
-            'row': row,
-            'col': col,
-            'previous_value': previous_value,
-            'new_value': value,
-            'cell_metadata': {
-                'is_correct': is_correct,
-                'location': cell.get_location()
-            }
-        }
-    }
+    # Push the move to history stack
+    history_stack.push(
+        f'Set cell ({row}, {col}) to {value}', 
+        copy.deepcopy(current_grid)
+    )
 
     # Update user session
     user_sessions_collection.update_one(
@@ -441,10 +495,12 @@ def process_move():
                     'is_solved': sudoku_puzzle.is_solved(),
                     'is_filled': sudoku_puzzle.is_filled()
                 }
-            },
-            '$push': {'history_stack': history_entry}
+            }
         }
     )
+
+    # Save history stack
+    _save_history_stack(session_id, history_stack)
 
     return jsonify({
         'success': True, 
