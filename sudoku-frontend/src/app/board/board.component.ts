@@ -39,6 +39,7 @@ export class BoardComponent implements OnInit {
   fourByFour: number = 64
   nineByNine: number = 32
 
+  //update game time on hard reload or exit from game
   @HostListener('window:beforeunload', ['$event'])
   onWindowReload(event: BeforeUnloadEvent): void {
     this.updateTime()
@@ -81,7 +82,6 @@ export class BoardComponent implements OnInit {
                 this.wrongMoves = Array.from({ length: this.size }, () => Array.from({length: this.size}, () => false))
                 this.session_id = res?.session_id
                 this.startTime = res?.time_taken
-                // setTimeout(() => {this.startTime = res?.time_taken}, 100)
             }
           })
         }
@@ -89,10 +89,12 @@ export class BoardComponent implements OnInit {
     }) 
   }
 
+  //Update game time on navigation to main page
   backToMenu() {
     this.updateTime()
   }
 
+  //Update the move on the selected cell to backend
   makeMove(x:number, y:number, value:number) {
     const move = {
       session_id: this.session_id,
@@ -108,46 +110,55 @@ export class BoardComponent implements OnInit {
     })
   }
 
+  //Update value of specific cell
+  //Update value of note on specific cell if action is 'Note' or if noteMode == True
   setCell(value: any) {
-    // if (typeof(value) == number) value = value
-    // if (typeof(value) == KeyboardEvent) {
-    //   value = value.key
-    // }
     this.action = ''
     const [x, y] = this.getPosition()
-    
+    //Cell is not selected
     if (x == -1 || y == -1) return
-
+    //Update note on a cell if noteMode is true
     if (this.noteMode) {
-      //take note
+      //Find the row of the note value inside the cell
       const n = Math.floor(value/Math.sqrt(this.size))
+      //Find the column of the note vallue inside the cell
       const m = value%Math.sqrt(this.size)
+      //Check if cell is empty
       if (this.board[x][y] == 0 || this.board[x][y] == null) {
+        //Check if the specified note position is zero or null
         if (this.noteBoard[x][y][n][m] == 0 || this.noteBoard[x][y][n][m] == null) {
+          //Set note value in the specified position
           this.noteBoard[x][y][n][m] = value + 1
         } else {
+          //Remove note value in the specified position
           this.noteBoard[x][y][n][m] = 0
         }
       }
     }
     else {
-      //set cell value
+      //Check if cell value is zero or null
       if (this.preDefined[x][y] == 0 || this.preDefined[x][y] == null) {
+        //Set cell value
         this.board[x][y] = value + 1
       }
+    //Return back cell position handler to original state[no cell selected state]
     this.setPosition(-1,-1)
+    //Call api to update value update on the specified position
     this.makeMove(x, y, value)  
     } 
   }
 
+  //Get selected position
   getPosition() {
     return this.clickedBoxPosition
   }
 
+  //Set position handler with the selected position
   setPosition(row: number, col: number) {
     this.clickedBoxPosition = [row, col]
   }
 
+  //Return back the board to the state where all moves are correct
   undoAll() {
     this.apiService.undoUntilCorrect({session_id: this.session_id}).subscribe({
       next: (res: any) => {
@@ -156,6 +167,7 @@ export class BoardComponent implements OnInit {
     })
   }
 
+  //Remove the last move only
   undoLast() {
     this.apiService.undoMove({session_id: this.session_id}).subscribe({
       next: (res: any) => {
@@ -164,6 +176,7 @@ export class BoardComponent implements OnInit {
     })
   }
 
+  //Check if each cell have a value
   isCompeleted():boolean {
     for(let i=0; i<this.size; i++){
       for(let j=0; j<this.size; j++){
@@ -173,6 +186,7 @@ export class BoardComponent implements OnInit {
     return true
   }
 
+  //Check if the game is compeleted is succefully
   check() {
     const isCompeleted: boolean = this.isCompeleted()
     if (isCompeleted) {
@@ -188,25 +202,34 @@ export class BoardComponent implements OnInit {
     }
   }
 
+  //Get specific hint if a cell is selected
+  //Get random hint if a cell is not selected
   hint(row: number, col: number) {
     this.apiService.getHint({
       session_id: this.session_id,
+      //Check if a cell is selected or not
       selected_cell: row && row > -1 ? {row: row,col: col} : {}
     }).subscribe({
       next: (res: any) => {
+        //Assign hint position row
         this.hintRow = res?.hint_row
+        //Assign hint position column
         this.hintCol = res?.hint_col
+        //Set the board value with hint value
         this.board[this.hintRow][this.hintCol] = res?.hint_value
+        //Remove wrong move status which is red color
         this.wrongMoves[this.hintRow][this.hintCol] = false
         setTimeout(() => {
           this.hintRow = -1
           this.hintCol = -1
+          //Return back cell position handler to original state[no cell selected state]
           this.setPosition(-1,-1)
         }, 1000)
       }
     })
   }
 
+  //Control action buttons states
   setAction(action: string) {
     this.action = action
     if (action == 'UNDO LAST') {
@@ -231,6 +254,7 @@ export class BoardComponent implements OnInit {
     }
   }
 
+  //Update current game time to backend in seconds
   updateTime() {
     const {hours, minutes, seconds} = this.time.get()
     const totalTime = hours*3600 + minutes*60 + seconds
@@ -241,14 +265,6 @@ export class BoardComponent implements OnInit {
   }
 
   filterWrongMoves() {
-    // const wrongMoves = new Map();
-    // for(let i=0; i<9; i++) {
-    //   for(let j=0; j<9; j++) {
-    //     if(this.puzzleSolution[i][j] != this.board[i][j]) {
-    //       wrongMoves.set(JSON.stringify([i,j]), [i,j])
-    //     }
-    //   }
-    // }
     this.apiService.getIncorrectMoves({
       session_id: this.session_id,
       current_grid_state: this.board
@@ -263,35 +279,21 @@ export class BoardComponent implements OnInit {
         }
       }
     })
-
-    // return wrongMoves
   }
 
-  // compareWithSolution(i: number, j: number) {
-  //   // console.log('res', this.wrongMoves)
-  //   const wrongMoves = this.wrongMoves
-  //   if (wrongMoves[JSON.stringify([i,j])] == JSON.stringify([i,j])) {
-  //     return true
-  //   }
-  //   return false
-  // }
-
-  // checkPuzzle(i: number, j: number) {
-  //   if (this.action == 'CHECK' && this.compareWithSolution(i,j)) {
-  //     return true
-  //   }
-  //   return false
-  // }
-
+  //Handle timer state
   handleTime() {
     this.isTimePaused = !this.isTimePaused
     if (this.isTimePaused){
+      //Stop timer
       this.time.stop()
     } else {
+      //Resume timer
       this.time.resume()
     }
   }
 
+  //Don't display note values initialized with zero
   clearNote(x: number, y: number ) {
     if (this.board[x][y] > 0) {
       return false
