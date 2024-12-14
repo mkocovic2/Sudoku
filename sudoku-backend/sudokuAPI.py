@@ -29,7 +29,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # MongoDB Connection
-client = MongoClient('mongodb://mongoadmin:teamcMongo@exodus.viewdns.net:27017/')
+client = MongoClient('--Removed for security purposes--')
 db = client['sudoku_database']
 puzzles_collections = {
     'Easy': db['Easy'],
